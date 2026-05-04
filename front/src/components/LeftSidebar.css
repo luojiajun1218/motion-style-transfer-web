@@ -1,0 +1,65 @@
+.left-sidebar {
+  width: 280px;
+  background-color: #383838;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+}
+
+.sidebar-section {
+  border-bottom: 1px solid #303030;
+}
+
+.sidebar-title {
+  background-color: #484848;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #aaa;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.file-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.file-label {
+  font-size: 12px;
+  color: #888;
+}
+
+.file-name {
+  font-size: 12px;
+  color: #00ff88;
+  padding: 4px 0;
+}
+
+.file-name-source {
+  color: #00ff88;
+}
+
+.file-name-style {
+  color: #4a90e2;
+}
+
+.file-hint {
+  font-size: 12px;
+  color: #666;
+  padding: 4px 0;
+}
+
+.transfer-status {
+  font-size: 12px;
+  color: #ff9a00;
+  padding: 8px 0;
+}

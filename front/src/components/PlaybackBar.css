@@ -1,0 +1,146 @@
+/* Blender-style status bar */
+.status-bar {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  background-color: #303030;
+  border-top: 1px solid #1a1a1a;
+  font-size: 11px;
+  gap: 10px;
+}
+
+/* 播放控制 */
+.status-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.status-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: #ccc;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.status-btn:hover:not(:disabled) {
+  background-color: #484848;
+  color: #fff;
+}
+
+.status-btn:disabled {
+  color: #555;
+  cursor: not-allowed;
+}
+
+.play-btn {
+  width: 28px;
+  height: 24px;
+  background-color: #4a90e2;
+  color: #fff;
+  border-radius: 4px;
+}
+
+.play-btn:hover:not(:disabled) {
+  background-color: #5aa0f2;
+}
+
+.play-btn:disabled {
+  background-color: #555;
+  color: #888;
+}
+
+/* 帧数 */
+.status-frame {
+  display: flex;
+  align-items: center;
+  min-width: 70px;
+  font-family: monospace;
+}
+
+.frame-current {
+  color: #fff;
+  font-size: 12px;
+}
+
+.frame-divider {
+  color: #666;
+  margin: 0 3px;
+}
+
+.frame-total {
+  color: #888;
+  font-size: 11px;
+}
+
+/* 时间线 */
+.status-timeline {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.timeline-track {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  background-color: #1a1a1a;
+  border-radius: 3px;
+}
+
+.timeline-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: #4a90e2;
+  border-radius: 3px 0 0 3px;
+  pointer-events: none;
+}
+
+.timeline-slider-handle {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background-color: #fff;
+  border: 2px solid #4a90e2;
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.timeline-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* 右侧FPS */
+.status-right {
+  display: flex;
+  align-items: center;
+  min-width: 55px;
+  justify-content: flex-end;
+}
+
+.status-fps {
+  color: #888;
+  font-family: monospace;
+}

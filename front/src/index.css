@@ -1,0 +1,143 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: #303030;
+  color: #e0e0e0;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Blender-style button base */
+.blender-btn {
+  padding: 8px 16px;
+  background-color: #4d4d4d;
+  color: #e0e0e0;
+  border: 1px solid #555;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.blender-btn:hover {
+  border-color: #ff9a00;
+}
+
+.blender-btn:disabled {
+  background-color: #333;
+  color: #888;
+  cursor: not-allowed;
+  border-color: #444;
+}
+
+.blender-btn-primary {
+  background-color: #ff9a00;
+  color: #1a1a1a;
+  border-color: #ff9a00;
+}
+
+.blender-btn-primary:hover {
+  background-color: #ffb020;
+  border-color: #ffb020;
+}
+
+.blender-btn-primary:disabled {
+  background-color: #666;
+  color: #888;
+  border-color: #555;
+}
+
+/* Panel styles */
+.panel-section {
+  background-color: #383838;
+  border-radius: 4px;
+  padding: 12px;
+}
+
+.panel-title {
+  background-color: #484848;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #ccc;
+  border-radius: 4px 4px 0 0;
+  margin: -12px -12px 12px -12px;
+}
+
+/* Slider styles */
+.blender-slider {
+  width: 100%;
+  height: 6px;
+  appearance: none;
+  background: #4d4d4d;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.blender-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #ff9a00;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.blender-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #ff9a00;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* Home page layout */
+.home-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background-color: #484848;
+  border-bottom: 1px solid #555;
+}
+
+.home-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #e0e0e0;
+}
+
+.home-style-tag {
+  font-size: 12px;
+  color: #888;
+  padding: 4px 8px;
+  background-color: #383838;
+  border-radius: 4px;
+}
+
+.home-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.canvas-area {
+  flex: 1;
+  position: relative;
+  background-color: #2d2d2d;
+}
