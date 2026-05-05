@@ -13,7 +13,7 @@ class SaveBVH:
         self.Xmean = preprocess['Xmean']
         self.Xstd = preprocess['Xstd']
 
-    def save_output(self, output, traj, filename='output.bvh'):
+    def save_output(self, output, traj, filename='output.bvh', frametime=None):
 
         output = denormalize(output, self.Xmean[:7], self.Xstd[:7])
         output = np.transpose(output, (1, 2, 0))
@@ -24,8 +24,13 @@ class SaveBVH:
         # original output
         positions = restore_animation(output[:, :, :3], traj)
 
+        # 使用传入的 frametime，如果没有传入则使用默认值
+        if frametime is None:
+            frametime = 1.0/30.0
+
         print('Saving animation of %s in bvh...' % filename)
-        to_bvh_cmu(positions, filename=filename, frametime=1.0/30.0)
+        print('  Frames: %d, FrameTime: %.6f (FPS: %.1f)' % (len(positions), frametime, 1.0/frametime))
+        to_bvh_cmu(positions, filename=filename, frametime=frametime)
 
 
 def restore_animation(pos, traj, start=None, end=None):

@@ -3,6 +3,7 @@ import numpy as np
 import random
 import yaml
 from data.xia_preprocess import generate_data
+from data.animation import BVH
 from back.arguments import custom_args
 from back.model.mst import MST
 from back.utils.save_bvh import SaveBVH
@@ -28,11 +29,14 @@ def style_transfer(cnt_path = 'data/preprocessed_xia_test/angry_13_000.bvh',
     # Get data information
     with open('back/xia_dataset.yml', "r") as f:
         cfg = yaml.load(f, Loader=yaml.Loader)
-    
+
     # Get preprocess demo data
     # cnt_path = args.demo_datapath+'/'+ args.cnt_clip + '.bvh'
     # sty_path = args.demo_datapath+'/'+ args.sty_clip + '.bvh'
 
+    # 读取原始 BVH 的帧率信息
+    _, _, cnt_frametime = BVH.load(cnt_path)
+    print('Content BVH frametime: %.6f (FPS: %.1f)' % (cnt_frametime, 1.0/cnt_frametime))
 
     # 这里原本的downsample=2，现在改为1
     cnt_clip, cnt_feet = generate_data(cnt_path, selected_joints=cfg["selected_joints"], njoints=cfg["njoints"], downsample=1)
@@ -45,7 +49,7 @@ def style_transfer(cnt_path = 'data/preprocessed_xia_test/angry_13_000.bvh',
     def normalize(x, mean, std):
         x = (x - mean) / std
         return x
-    
+
     cnt_clip = normalize(cnt_clip, Xmean, Xstd)
     sty_clip = normalize(sty_clip, Xmean, Xstd)
 
@@ -61,13 +65,13 @@ def style_transfer(cnt_path = 'data/preprocessed_xia_test/angry_13_000.bvh',
     sty_m  = sty_clip[:,1,:,0]
     sty_mask = ~torch.isnan(sty_m).unsqueeze(1).repeat(1, sty_m.size(1), 1).unsqueeze(1)
     sty_clip[torch.isnan(sty_clip)] = 0.0
-    
+
     # Load model
     model = MST(False, cfg, args)
     model = model.to(device)
     model.load_checkpoint()
     model.eval()
-    
+
     # Perform style transfer
     gen = model.generator(cnt_clip, sty_clip, cnt_mask, sty_mask)
 
@@ -75,9 +79,11 @@ def style_transfer(cnt_path = 'data/preprocessed_xia_test/angry_13_000.bvh',
     gen_traj = gen[0,cfg["joint_dims"]:,:cnt_length,:].cpu().detach().numpy()
     gen_body = gen[0, :cfg["joint_dims"], :cnt_length,:].cpu().detach().numpy()
 
-    # Save output
+    print('Generated frames: %d' % cnt_length)
+
+    # Save output - 使用原始 BVH 的帧率
     save_bvh = SaveBVH(args)
-    save_bvh.save_output(gen_body, gen_traj, filename=output_path) 
+    save_bvh.save_output(gen_body, gen_traj, filename=output_path, frametime=cnt_frametime)
     print('风格迁移完成')
 
 if __name__ == '__main__':
