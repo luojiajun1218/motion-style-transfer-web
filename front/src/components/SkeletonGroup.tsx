@@ -11,12 +11,13 @@ interface SkeletonGroupProps {
   xOffset: number
   color: string
   label: string
+  isSelected?: boolean  // 新增
 }
 
 // Cached geometry - shared across all skeletons
 const sphereGeometry = new THREE.SphereGeometry(0.15, 8, 8)
 
-export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, label }: SkeletonGroupProps) {
+export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, label, isSelected = false }: SkeletonGroupProps) {
   const groupRef = useRef<THREE.Group>(null)
   const boneMeshRefs = useRef<THREE.Mesh[]>([])
   const lineRefs = useRef<THREE.Line[]>([])
@@ -37,6 +38,17 @@ export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, lab
     boneMaterial.current.color.setStyle(color)
     lineMaterial.current.color.setStyle(color)
   }, [color])
+
+  // Update emissive for selection highlight
+  useEffect(() => {
+    if (isSelected) {
+      boneMaterial.current.emissive = new THREE.Color(color)
+      boneMaterial.current.emissiveIntensity = 0.5
+    } else {
+      boneMaterial.current.emissive = new THREE.Color(0x000000)
+      boneMaterial.current.emissiveIntensity = 0
+    }
+  }, [isSelected, color])
 
   // Initialize skeleton visualization
   useEffect(() => {

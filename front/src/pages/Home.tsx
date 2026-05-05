@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import UnifiedCanvas from '../components/UnifiedCanvas'
 import LeftSidebar from '../components/LeftSidebar'
+import RightSidebar from '../components/RightSidebar'
 import PlaybackBar from '../components/PlaybackBar'
 import { uploadBVH, transferStyle, BVHFileState, LocalFileResult, TransferResponse } from '../services/api'
 
@@ -16,9 +17,13 @@ export default function Home() {
   const [style, setStyle] = useState<BVHFileState>(defaultFileState)
   const [result, setResult] = useState<BVHFileState>(defaultFileState)
 
+  // 计算 result 文件名
+  const resultFileName = result.file?.name ?? (result.fileId ? 'Output' : null)
+
   const [frameIndex, setFrameIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [transferLoading, setTransferLoading] = useState(false)
+  const [selectedSkeleton, setSelectedSkeleton] = useState<'source' | 'style' | 'result' | null>(null)
 
   const playIntervalRef = useRef<number | null>(null)
   const fps = 30
@@ -148,6 +153,10 @@ export default function Home() {
     setFrameIndex(frame)
   }
 
+  const handleSkeletonSelect = (skeleton: 'source' | 'style' | 'result' | null) => {
+    setSelectedSkeleton(skeleton)
+  }
+
   return (
     <div className="home-container">
       {/* Header */}
@@ -177,8 +186,18 @@ export default function Home() {
             resultData={result.parsedData}
             resultFileId={result.fileId}
             frameIndex={frameIndex}
+            selectedSkeleton={selectedSkeleton}
           />
         </div>
+
+        {/* Right Sidebar */}
+        <RightSidebar
+          sourceFileName={source.file?.name ?? null}
+          styleFileName={style.file?.name ?? null}
+          resultFileName={resultFileName}
+          selectedSkeleton={selectedSkeleton}
+          onSelect={handleSkeletonSelect}
+        />
       </div>
 
       {/* Playback Bar */}

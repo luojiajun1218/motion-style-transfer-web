@@ -12,6 +12,7 @@ interface UnifiedCanvasProps {
   resultData: ParsedBVHData | null
   resultFileId: string | null
   frameIndex: number
+  selectedSkeleton: 'source' | 'style' | 'result' | null  // 新增
 }
 
 function calculateCombinedBoundsFromParsed(
@@ -101,7 +102,8 @@ export default function UnifiedCanvas({
   styleData,
   resultData,
   resultFileId,
-  frameIndex
+  frameIndex,
+  selectedSkeleton,
 }: UnifiedCanvasProps) {
   const [loadedResultData, setLoadedResultData] = useState<ParsedBVHData | null>(null)
   const [loading, setLoading] = useState(false)
@@ -163,9 +165,9 @@ export default function UnifiedCanvas({
 
         <CameraController sourceData={sourceData} styleData={styleData} resultData={resultData} loadedResultData={loadedResultData} controlsRef={controlsRef} />
 
-        <SkeletonGroup bvhData={sourceData} frameIndex={frameIndex} xOffset={-6} color="#00ff88" label="Source" />
-        <SkeletonGroup bvhData={styleData} frameIndex={frameIndex} xOffset={0} color="#4a90e2" label="Style" />
-        <SkeletonGroup bvhData={effectiveResultData} frameIndex={frameIndex} xOffset={6} color="#ff9a00" label="Result" />
+        <SkeletonGroup bvhData={sourceData} frameIndex={frameIndex} xOffset={-6} color="#00ff88" label="Source" isSelected={selectedSkeleton === 'source'} />
+        <SkeletonGroup bvhData={styleData} frameIndex={frameIndex} xOffset={0} color="#4a90e2" label="Style" isSelected={selectedSkeleton === 'style'} />
+        <SkeletonGroup bvhData={effectiveResultData} frameIndex={frameIndex} xOffset={6} color="#ff9a00" label="Result" isSelected={selectedSkeleton === 'result'} />
 
         <gridHelper args={[30, 30, 0xaaaaaa, 0x888888]} />
         <OrbitControls ref={controlsRef} makeDefault />
