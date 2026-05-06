@@ -13,10 +13,10 @@ interface RightSidebarProps {
   bvhFiles: BVHFileWithRole[]
   selectedFileIndex: number | null
   resultFileName: string | null
-  selectedSkeleton: 'source' | 'style' | 'result' | number | null
+  selectedSkeleton: 'source' | 'style' | 'result' | null
   onFileSelect: (index: number) => void
   onFileRemove: (index: number) => void
-  onSkeletonSelect: (skeleton: 'source' | 'style' | 'result' | number | null) => void
+  onSkeletonSelect: (skeleton: 'source' | 'style' | 'result' | null) => void
 }
 
 const roleColors = {

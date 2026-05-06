@@ -5,6 +5,11 @@ import RightSidebar from '../components/RightSidebar'
 import PlaybackBar from '../components/PlaybackBar'
 import { uploadBVH, transferStyle, BVHFileState, LocalFileResult, TransferResponse } from '../services/api'
 
+// 扩展 BVHFileState，增加 role 属性
+interface BVHFileWithRole extends BVHFileState {
+  role: 'unassigned' | 'source' | 'style'
+}
+
 const defaultFileState: BVHFileState = {
   file: null,
   parsedData: null,
@@ -13,9 +18,10 @@ const defaultFileState: BVHFileState = {
 }
 
 export default function Home() {
-  const [source, setSource] = useState<BVHFileState>(defaultFileState)
-  const [style, setStyle] = useState<BVHFileState>(defaultFileState)
+  // 改为 BVH 文件列表，每个文件可分配角色
+  const [bvhFiles, setBvhFiles] = useState<BVHFileWithRole[]>([])
   const [result, setResult] = useState<BVHFileState>(defaultFileState)
+  const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null)  // 新增：当前选中的文件
 
   // 计算 result 文件名
   const resultFileName = result.file?.name ?? (result.fileId ? 'Output' : null)
@@ -23,15 +29,20 @@ export default function Home() {
   const [frameIndex, setFrameIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [transferLoading, setTransferLoading] = useState(false)
-  const [selectedSkeleton, setSelectedSkeleton] = useState<'source' | 'style' | 'result' | null>(null)
+  const [selectedSkeleton, setSelectedSkeleton] = useState<'source' | 'style' | 'result' | number | null>(null)
+  // number表示unassigned文件的索引
 
   const playIntervalRef = useRef<number | null>(null)
   const fps = 30
 
+  // 从列表中获取 source 和 style 文件
+  const sourceFile = bvhFiles.find(f => f.role === 'source')
+  const styleFile = bvhFiles.find(f => f.role === 'style')
+
   // Calculate max frames from loaded data
   const maxFrames = Math.max(
-    source.parsedData?.frameCount || 0,
-    style.parsedData?.frameCount || 0,
+    sourceFile?.parsedData?.frameCount || 0,
+    styleFile?.parsedData?.frameCount || 0,
     result.parsedData?.frameCount || 0,
     100 // default
   )
@@ -58,38 +69,78 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isPlaying])
 
-  const handleSourceSelect = (data: LocalFileResult) => {
-    setSource({ file: data.file, parsedData: data.parsedData, fileId: null, isUploaded: false })
+  // 导入 BVH 文件（统一入口）
+  const handleFileImport = (data: LocalFileResult) => {
+    const newFile: BVHFileWithRole = {
+      file: data.file,
+      parsedData: data.parsedData,
+      fileId: null,
+      isUploaded: false,
+      role: 'unassigned'
+    }
+    setBvhFiles(prev => [...prev, newFile])
+    setSelectedFileIndex(bvhFiles.length)  // 自动选中新导入的文件
     setFrameIndex(0)
     setIsPlaying(false)
   }
 
-  const handleStyleSelect = (data: LocalFileResult) => {
-    setStyle({ file: data.file, parsedData: data.parsedData, fileId: null, isUploaded: false })
-    setFrameIndex(0)
-    setIsPlaying(false)
+  // 选中文件
+  const handleFileSelect = (index: number) => {
+    setSelectedFileIndex(index)
+  }
+
+  // 分配角色（使用当前选中的文件）
+  const handleRoleAssign = (role: 'source' | 'style') => {
+    if (selectedFileIndex === null) return
+    setBvhFiles(prev => {
+      // 如果要把某个文件设为 source/style，先清除其他文件的该角色
+      return prev.map((f, i) => {
+        if (f.role === role) {
+          return { ...f, role: 'unassigned' as const }
+        }
+        if (i === selectedFileIndex) {
+          return { ...f, role }
+        }
+        return f
+      })
+    })
+  }
+
+  // 删除文件
+  const handleFileRemove = (index: number) => {
+    setBvhFiles(prev => prev.filter((_, i) => i !== index))
+    // 清除选中状态或调整选中索引
+    if (selectedFileIndex === index) {
+      setSelectedFileIndex(null)
+    } else if (selectedFileIndex !== null && selectedFileIndex > index) {
+      setSelectedFileIndex(selectedFileIndex - 1)
+    }
   }
 
   const handleTransfer = async (): Promise<TransferResponse | null> => {
-    if (!source.file || !style.file) return null
+    if (!sourceFile?.file || !styleFile?.file) return null
 
     setTransferLoading(true)
     setIsPlaying(false)
 
     try {
-      let sourceId = source.fileId
-      let styleId = style.fileId
+      let sourceId = sourceFile.fileId
+      let styleId = styleFile.fileId
 
-      if (!source.isUploaded) {
-        const uploadResult = await uploadBVH(source.file)
+      if (!sourceFile.isUploaded) {
+        const uploadResult = await uploadBVH(sourceFile.file)
         sourceId = uploadResult.id
-        setSource(prev => ({ ...prev, fileId: sourceId, isUploaded: true }))
+        setBvhFiles(prev => prev.map(f =>
+          f.file === sourceFile.file ? { ...f, fileId: sourceId, isUploaded: true } : f
+        ))
       }
 
-      if (!style.isUploaded) {
-        const uploadResult = await uploadBVH(style.file)
+      if (!styleFile.isUploaded) {
+        const uploadResult = await uploadBVH(styleFile.file)
         styleId = uploadResult.id
-        setStyle(prev => ({ ...prev, fileId: styleId, isUploaded: true }))
+        setBvhFiles(prev => prev.map(f =>
+          f.file === styleFile.file ? { ...f, fileId: styleId, isUploaded: true } : f
+        ))
       }
 
       if (!sourceId || !styleId) {
@@ -153,8 +204,12 @@ export default function Home() {
     setFrameIndex(frame)
   }
 
-  const handleSkeletonSelect = (skeleton: 'source' | 'style' | 'result' | null) => {
+  const handleSkeletonSelect = (skeleton: 'source' | 'style' | 'result' | number | null) => {
     setSelectedSkeleton(skeleton)
+    // 如果是number（unassigned索引），同时更新selectedFileIndex
+    if (typeof skeleton === 'number') {
+      setSelectedFileIndex(skeleton)
+    }
   }
 
   return (
@@ -169,34 +224,36 @@ export default function Home() {
       <div className="home-main">
         {/* Left Sidebar */}
         <LeftSidebar
-          sourceFileName={source.file?.name ?? null}
-          styleFileName={style.file?.name ?? null}
-          onSourceSelect={(data) => handleSourceSelect(data as LocalFileResult)}
-          onStyleSelect={(data) => handleStyleSelect(data as LocalFileResult)}
+          selectedFileIndex={selectedFileIndex}
+          onFileImport={(data) => handleFileImport(data as LocalFileResult)}
+          onRoleAssign={handleRoleAssign}
           onTransfer={async () => { await handleTransfer() }}
-          transferDisabled={!source.file || !style.file}
+          transferDisabled={!sourceFile?.file || !styleFile?.file}
           transferLoading={transferLoading}
         />
 
         {/* Canvas Area */}
         <div className="canvas-area">
           <UnifiedCanvas
-            sourceData={source.parsedData}
-            styleData={style.parsedData}
+            allFiles={bvhFiles}
             resultData={result.parsedData}
             resultFileId={result.fileId}
             frameIndex={frameIndex}
             selectedSkeleton={selectedSkeleton}
+            onFileSelect={handleFileSelect}
+            onSkeletonSelect={handleSkeletonSelect}
           />
         </div>
 
         {/* Right Sidebar */}
         <RightSidebar
-          sourceFileName={source.file?.name ?? null}
-          styleFileName={style.file?.name ?? null}
+          bvhFiles={bvhFiles}
+          selectedFileIndex={selectedFileIndex}
           resultFileName={resultFileName}
           selectedSkeleton={selectedSkeleton}
-          onSelect={handleSkeletonSelect}
+          onFileSelect={handleFileSelect}
+          onFileRemove={handleFileRemove}
+          onSkeletonSelect={handleSkeletonSelect}
         />
       </div>
 

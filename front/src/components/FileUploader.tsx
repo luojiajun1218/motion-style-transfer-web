@@ -7,10 +7,9 @@ import { debugLog } from '../utils/debug'
 interface FileUploaderProps {
   onSelect: (result: LocalFileResult) => void
   label: string
-  variant?: 'source' | 'style' | 'default'
 }
 
-export default function FileUploader({ onSelect, label, variant = 'default' }: FileUploaderProps) {
+export default function FileUploader({ onSelect, label }: FileUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleClick = () => {
@@ -73,7 +72,7 @@ export default function FileUploader({ onSelect, label, variant = 'default' }: F
     if (inputRef.current) inputRef.current.value = ''
   }
 
-  const hoverColor = variant === 'source' ? '#00ff88' : variant === 'style' ? '#4a90e2' : '#ff9a00'
+  const hoverColor = '#ff9a00'
 
   return (
     <div>

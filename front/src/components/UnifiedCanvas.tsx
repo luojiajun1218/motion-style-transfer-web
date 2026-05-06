@@ -6,13 +6,85 @@ import SkeletonGroup from './SkeletonGroup'
 import { ParsedBVHData, getBVHUrl, calculateBVHBounds } from '../services/api'
 import { useState, useEffect, useCallback, useRef } from 'react'
 
+// BVH 文件状态（带角色）
+interface BVHFileWithRole {
+  file: File | null
+  parsedData: ParsedBVHData | null
+  fileId: string | null
+  isUploaded: boolean
+  role: 'unassigned' | 'source' | 'style'
+}
+
 interface UnifiedCanvasProps {
-  sourceData: ParsedBVHData | null
-  styleData: ParsedBVHData | null
+  allFiles: BVHFileWithRole[]
   resultData: ParsedBVHData | null
   resultFileId: string | null
   frameIndex: number
-  selectedSkeleton: 'source' | 'style' | 'result' | null  // 新增
+  selectedSkeleton: 'source' | 'style' | 'result' | number | null
+  onFileSelect: (index: number) => void
+  onSkeletonSelect: (skeleton: 'source' | 'style' | 'result' | number | null) => void
+}
+
+// 点击检测组件
+function ClickDetector({
+  allFiles,
+  onFileSelect,
+  onSkeletonSelect
+}: {
+  allFiles: BVHFileWithRole[]
+  onFileSelect: (index: number) => void
+  onSkeletonSelect: (skeleton: 'source' | 'style' | 'result' | number | null) => void
+}) {
+  const { camera, scene, gl } = useThree()
+  const raycaster = useRef(new THREE.Raycaster())
+  const mouse = useRef(new THREE.Vector2())
+
+  useEffect(() => {
+    const handleClick = (event: MouseEvent) => {
+      // 计算鼠标位置
+      const rect = gl.domElement.getBoundingClientRect()
+      mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+      mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+
+      // 射线检测
+      raycaster.current.setFromCamera(mouse.current, camera)
+      const intersects = raycaster.current.intersectObjects(scene.children, true)
+
+      if (intersects.length > 0) {
+        const object = intersects[0].object
+
+        // 查找点击的物体属于哪个骨骼组
+        let parent: THREE.Object3D | null = object
+        while (parent) {
+          if (parent.userData.skeletonType) {
+            const type = parent.userData.skeletonType as string
+            if (type === 'source') {
+              const sourceIndex = allFiles.findIndex(f => f.role === 'source')
+              if (sourceIndex !== -1) onFileSelect(sourceIndex)
+              onSkeletonSelect('source')
+            } else if (type === 'style') {
+              const styleIndex = allFiles.findIndex(f => f.role === 'style')
+              if (styleIndex !== -1) onFileSelect(styleIndex)
+              onSkeletonSelect('style')
+            } else if (type === 'result') {
+              onSkeletonSelect('result')
+            } else if (type.startsWith('unassigned-')) {
+              const index = parseInt(type.split('-')[1])
+              onFileSelect(index)
+              onSkeletonSelect(index)  // 关键：传递索引让骨骼高亮
+            }
+            return
+          }
+          parent = parent.parent
+        }
+      }
+    }
+
+    gl.domElement.addEventListener('click', handleClick)
+    return () => gl.domElement.removeEventListener('click', handleClick)
+  }, [camera, scene, gl, allFiles, onFileSelect, onSkeletonSelect])
+
+  return null
 }
 
 function calculateCombinedBoundsFromParsed(
@@ -42,14 +114,12 @@ function calculateCombinedBoundsFromParsed(
 }
 
 function CameraController({
-  sourceData,
-  styleData,
+  allFiles,
   resultData,
   loadedResultData,
   controlsRef
 }: {
-  sourceData: ParsedBVHData | null
-  styleData: ParsedBVHData | null
+  allFiles: BVHFileWithRole[]
   resultData: ParsedBVHData | null
   loadedResultData: ParsedBVHData | null
   controlsRef: React.MutableRefObject<OrbitControlsImpl | null>
@@ -57,12 +127,27 @@ function CameraController({
   const { camera } = useThree()
 
   const fitCamera = useCallback(() => {
+    const dataList: { data: ParsedBVHData | null; offset: number }[] = []
+
+    const sourceFile = allFiles.find(f => f.role === 'source')
+    const styleFile = allFiles.find(f => f.role === 'style')
+
+    if (sourceFile?.parsedData) {
+      dataList.push({ data: sourceFile.parsedData, offset: -6 })
+    }
+    if (styleFile?.parsedData) {
+      dataList.push({ data: styleFile.parsedData, offset: 0 })
+    }
+
     const effectiveResult = resultData || loadedResultData
-    const dataList = [
-      { data: sourceData, offset: -6 },
-      { data: styleData, offset: 0 },
-      { data: effectiveResult, offset: 6 }
-    ]
+    if (effectiveResult) {
+      dataList.push({ data: effectiveResult, offset: 6 })
+    }
+
+    const unassignedFiles = allFiles.filter(f => f.role === 'unassigned' && f.parsedData)
+    unassignedFiles.forEach((f, i) => {
+      dataList.push({ data: f.parsedData!, offset: 12 + i * 6 })
+    })
 
     const result = calculateCombinedBoundsFromParsed(dataList)
     if (!result) return
@@ -74,8 +159,6 @@ function CameraController({
 
     const distance = (maxDim / 2) / Math.tan(fovRadians / 2) * paddingFactor
 
-    // Position camera with a downward angle (not flat horizontal view)
-    // This makes the grid plane visible as a surface, not a line
     camera.position.set(center.x, center.y + distance * 0.5, center.z + distance * 0.8)
     camera.lookAt(center)
     camera.updateProjectionMatrix()
@@ -86,28 +169,32 @@ function CameraController({
     }
 
     console.log('[CameraController] center=', center.x.toFixed(2), center.y.toFixed(2), center.z.toFixed(2), 'distance=', distance.toFixed(2))
-  }, [sourceData, styleData, resultData, loadedResultData, camera, controlsRef])
+  }, [allFiles, resultData, loadedResultData, camera, controlsRef])
 
   useEffect(() => {
-    if (sourceData || styleData || resultData || loadedResultData) {
+    const hasData = allFiles.some(f => f.parsedData) || resultData || loadedResultData
+    if (hasData) {
       fitCamera()
     }
-  }, [sourceData, styleData, resultData, loadedResultData, fitCamera])
+  }, [allFiles, resultData, loadedResultData, fitCamera])
 
   return null
 }
 
 export default function UnifiedCanvas({
-  sourceData,
-  styleData,
+  allFiles,
   resultData,
   resultFileId,
   frameIndex,
   selectedSkeleton,
+  onFileSelect,
+  onSkeletonSelect,
 }: UnifiedCanvasProps) {
   const [loadedResultData, setLoadedResultData] = useState<ParsedBVHData | null>(null)
   const [loading, setLoading] = useState(false)
   const controlsRef = useRef<OrbitControlsImpl | null>(null)
+
+  const unassignedFiles = allFiles.filter(f => f.role === 'unassigned')
 
   useEffect(() => {
     if (resultData) { setLoadedResultData(null); return }
@@ -125,13 +212,11 @@ export default function UnifiedCanvas({
         )
         rootBones.forEach((rootBone: THREE.Bone) => boneGroup.add(rootBone))
 
-        // 统一朝向：静态旋转，与 FileUploader 保持一致
         boneGroup.rotation.y = -Math.PI / 2
 
         const bones: THREE.Bone[] = []
         boneGroup.traverse((child) => { if (child instanceof THREE.Bone) bones.push(child) })
 
-        // Apply animation frame 0 before calculating bounds
         const mixer = new THREE.AnimationMixer(boneGroup)
         const action = mixer.clipAction(result.clip)
         action.play()
@@ -153,7 +238,11 @@ export default function UnifiedCanvas({
   }, [resultFileId, resultData])
 
   const effectiveResultData = resultData || loadedResultData
-  const hasAnyData = Boolean(sourceData || styleData || effectiveResultData)
+  const hasAnyData = allFiles.some(f => f.parsedData) || Boolean(effectiveResultData)
+
+  // 获取各角色文件
+  const sourceFile = allFiles.find(f => f.role === 'source')
+  const styleFile = allFiles.find(f => f.role === 'style')
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#484848' }}>
@@ -163,11 +252,37 @@ export default function UnifiedCanvas({
         <ambientLight intensity={0.5} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
 
-        <CameraController sourceData={sourceData} styleData={styleData} resultData={resultData} loadedResultData={loadedResultData} controlsRef={controlsRef} />
+        <ClickDetector allFiles={allFiles} onFileSelect={onFileSelect} onSkeletonSelect={onSkeletonSelect} />
 
-        <SkeletonGroup bvhData={sourceData} frameIndex={frameIndex} xOffset={-6} color="#00ff88" label="Source" isSelected={selectedSkeleton === 'source'} />
-        <SkeletonGroup bvhData={styleData} frameIndex={frameIndex} xOffset={0} color="#4a90e2" label="Style" isSelected={selectedSkeleton === 'style'} />
-        <SkeletonGroup bvhData={effectiveResultData} frameIndex={frameIndex} xOffset={6} color="#ff9a00" label="Result" isSelected={selectedSkeleton === 'result'} />
+        <CameraController allFiles={allFiles} resultData={resultData} loadedResultData={loadedResultData} controlsRef={controlsRef} />
+
+        {/* Source */}
+        <SkeletonGroup bvhData={sourceFile?.parsedData ?? null} frameIndex={frameIndex} xOffset={-6} color="#00ff88" label="Source" isSelected={selectedSkeleton === 'source'} skeletonType="source" />
+
+        {/* Style */}
+        <SkeletonGroup bvhData={styleFile?.parsedData ?? null} frameIndex={frameIndex} xOffset={0} color="#4a90e2" label="Style" isSelected={selectedSkeleton === 'style'} skeletonType="style" />
+
+        {/* Result */}
+        <SkeletonGroup bvhData={effectiveResultData} frameIndex={frameIndex} xOffset={6} color="#ff9a00" label="Result" isSelected={selectedSkeleton === 'result'} skeletonType="result" />
+
+        {/* Unassigned files */}
+        {unassignedFiles.map((f, i) => {
+          const actualIndex = allFiles.findIndex(file => file === f)
+          const isSelected = selectedSkeleton === actualIndex  // 动态判断是否选中
+          return (
+            <SkeletonGroup
+              key={`unassigned-${i}`}
+              bvhData={f.parsedData}
+              frameIndex={frameIndex}
+              xOffset={12 + i * 6}
+              color="#cccccc"
+              label=""
+              isSelected={isSelected}
+              showLabel={false}
+              skeletonType={`unassigned-${actualIndex}`}
+            />
+          )
+        })}
 
         <gridHelper args={[30, 30, 0xaaaaaa, 0x888888]} />
         <OrbitControls ref={controlsRef} makeDefault />

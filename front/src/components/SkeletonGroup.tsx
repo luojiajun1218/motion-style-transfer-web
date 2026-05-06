@@ -11,13 +11,15 @@ interface SkeletonGroupProps {
   xOffset: number
   color: string
   label: string
-  isSelected?: boolean  // 新增
+  isSelected?: boolean
+  showLabel?: boolean
+  skeletonType?: string  // 新增：用于点击检测识别
 }
 
 // Cached geometry - shared across all skeletons
 const sphereGeometry = new THREE.SphereGeometry(0.15, 8, 8)
 
-export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, label, isSelected = false }: SkeletonGroupProps) {
+export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, label, isSelected = false, showLabel = true, skeletonType }: SkeletonGroupProps) {
   const groupRef = useRef<THREE.Group>(null)
   const boneMeshRefs = useRef<THREE.Mesh[]>([])
   const lineRefs = useRef<THREE.Line[]>([])
@@ -30,23 +32,27 @@ export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, lab
   const clonedBonesRef = useRef<THREE.Bone[]>([])
 
   // Materials for this skeleton (created per-instance for color variation)
-  const boneMaterial = useRef(new THREE.MeshStandardMaterial({ color }))
+  const boneMaterial = useRef(new THREE.MeshStandardMaterial({ color, transparent: true, opacity: 0.9 }))
   const lineMaterial = useRef(new THREE.LineBasicMaterial({ color, opacity: 0.6, transparent: true }))
 
   // Update material color when color prop changes (no reconstruction needed)
   useEffect(() => {
-    boneMaterial.current.color.setStyle(color)
-    lineMaterial.current.color.setStyle(color)
-  }, [color])
-
-  // Update emissive for selection highlight
-  useEffect(() => {
     if (isSelected) {
+      // 选中时：更亮的颜色 + 不透明
+      boneMaterial.current.color.setStyle('#ffffff')
       boneMaterial.current.emissive = new THREE.Color(color)
-      boneMaterial.current.emissiveIntensity = 0.5
+      boneMaterial.current.emissiveIntensity = 2.0
+      boneMaterial.current.opacity = 1
+      lineMaterial.current.color.setStyle(color)
+      lineMaterial.current.opacity = 1
     } else {
+      // 未选中时：原始颜色 + 半透明
+      boneMaterial.current.color.setStyle(color)
       boneMaterial.current.emissive = new THREE.Color(0x000000)
       boneMaterial.current.emissiveIntensity = 0
+      boneMaterial.current.opacity = 0.85
+      lineMaterial.current.color.setStyle(color)
+      lineMaterial.current.opacity = 0.5
     }
   }, [isSelected, color])
 
@@ -73,6 +79,8 @@ export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, lab
     // This ensures each SkeletonGroup has its own independent Bone objects
     const clonedBoneGroup = SkeletonUtils.clone(bvhData.boneGroup) as THREE.Group
     clonedBoneGroup.position.x = xOffset
+    clonedBoneGroup.userData.skeletonType = skeletonType  // 设置类型标识
+    groupRef.current.userData.skeletonType = skeletonType  // 根节点也设置
     groupRef.current.add(clonedBoneGroup)
 
     // Get the cloned skeleton bones from the cloned group
@@ -181,7 +189,7 @@ export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, lab
       }
       initialized.current = false
     }
-  }, [bvhData, xOffset])  // color removed - handled by separate effect
+  }, [bvhData, xOffset, skeletonType])  // color removed - handled by separate effect
 
   // Update frame
   useFrame(() => {
@@ -248,16 +256,18 @@ export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, lab
 
   return (
     <group ref={groupRef}>
-      <Billboard ref={billboardRef} follow={true}>
-        <Text
-          fontSize={1.2}
-          color={color}
-          anchorX="center"
-          anchorY="top"
-        >
-          {label}
-        </Text>
-      </Billboard>
+      {showLabel && (
+        <Billboard ref={billboardRef} follow={true}>
+          <Text
+            fontSize={1.2}
+            color={color}
+            anchorX="center"
+            anchorY="top"
+          >
+            {label}
+          </Text>
+        </Billboard>
+      )}
     </group>
   )
 }

@@ -4,6 +4,7 @@ import './LeftSidebar.css'
 
 interface LeftSidebarProps {
   selectedFileIndex: number | null
+  hasFiles: boolean
   onFileImport: (data: { file: File }) => void
   onRoleAssign: (role: 'source' | 'style') => void
   onTransfer: () => Promise<void>
@@ -13,6 +14,7 @@ interface LeftSidebarProps {
 
 export default function LeftSidebar({
   selectedFileIndex,
+  hasFiles,
   onFileImport,
   onRoleAssign,
   onTransfer,

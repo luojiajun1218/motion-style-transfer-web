@@ -38,28 +38,15 @@
   color: #888;
 }
 
-.file-name {
-  font-size: 12px;
-  color: #00ff88;
-  padding: 4px 0;
-}
-
-.file-name-source {
-  color: #00ff88;
-}
-
-.file-name-style {
-  color: #4a90e2;
-}
-
-.file-hint {
-  font-size: 12px;
-  color: #666;
-  padding: 4px 0;
-}
-
 .transfer-status {
   font-size: 12px;
   color: #ff9a00;
   padding: 8px 0;
+}
+
+/* 全局角色按钮 */
+.global-role-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
