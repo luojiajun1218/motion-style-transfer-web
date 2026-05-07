@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type Dispatch, type SetStateAction } from 'react'
 import { getPresetStyles, getPresetFileId, transferStyle, uploadBVH, PresetStylesResponse, BVHFileWithRole } from '../types'
 import { useCustomStyles, CustomStyle } from '../hooks/useCustomStyles'
 import { TransferStep } from './TransferProgress'
@@ -11,6 +11,7 @@ interface StyleLibraryProps {
   transferLoading: boolean
   setTransferLoading: (loading: boolean) => void
   setTransferStep: (step: TransferStep) => void
+  setBvhFiles: Dispatch<SetStateAction<BVHFileWithRole[]>>
 }
 
 export default function StyleLibrary({
@@ -19,7 +20,8 @@ export default function StyleLibrary({
   onTransferComplete,
   transferLoading,
   setTransferLoading,
-  setTransferStep
+  setTransferStep,
+  setBvhFiles
 }: StyleLibraryProps) {
 
   const [presetStyles, setPresetStyles] = useState<PresetStylesResponse | null>(null)
@@ -72,6 +74,9 @@ export default function StyleLibrary({
         setTransferStep('upload-source')
         const uploadResult = await uploadBVH(sourceFile.file)
         sourceId = uploadResult.id
+        setBvhFiles(prev => prev.map(f =>
+          f.file === sourceFile.file ? { ...f, fileId: sourceId, isUploaded: true } : f
+        ))
       }
 
       if (!sourceId) {
