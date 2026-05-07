@@ -102,8 +102,11 @@ export default function Home() {
       isUploaded: false,
       role: 'unassigned'
     }
-    setBvhFiles(prev => [...prev, newFile])
-    setSelectedFileIndex(bvhFiles.length)  // 自动选中新导入的文件
+    setBvhFiles(prev => {
+      const next = [...prev, newFile]
+      setSelectedFileIndex(next.length - 1)  // 自动选中新导入的文件
+      return next
+    })
     setFrameIndex(0)
     setIsPlaying(false)
   }
@@ -256,6 +259,7 @@ export default function Home() {
           }}
           setTransferLoading={setTransferLoading}
           setTransferStep={setTransferStep}
+          setBvhFiles={setBvhFiles}
         />
 
         {/* Canvas Area */}
