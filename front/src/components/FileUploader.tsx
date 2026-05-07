@@ -72,8 +72,6 @@ export default function FileUploader({ onSelect, label }: FileUploaderProps) {
     if (inputRef.current) inputRef.current.value = ''
   }
 
-  const hoverColor = '#ff9a00'
-
   return (
     <div>
       <input
@@ -86,12 +84,6 @@ export default function FileUploader({ onSelect, label }: FileUploaderProps) {
       <button
         onClick={handleClick}
         className="blender-btn"
-        style={{
-          borderColor: '#555',
-          width: '100%'
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.borderColor = hoverColor}
-        onMouseLeave={(e) => e.currentTarget.style.borderColor = '#555'}
       >
         {label}
       </button>

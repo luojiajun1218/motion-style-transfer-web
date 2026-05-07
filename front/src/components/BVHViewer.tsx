@@ -22,9 +22,9 @@ interface BVHDataInternal {
 
 // Cached geometry and materials - created once, reused every frame
 const sphereGeometry = new THREE.SphereGeometry(0.2, 8, 8)
-const rootBoneMaterial = new THREE.MeshStandardMaterial({ color: '#00ff00' })
-const childBoneMaterial = new THREE.MeshStandardMaterial({ color: '#4a90e2' })
-const lineMaterial = new THREE.LineBasicMaterial({ color: '#ffffff' })
+const rootBoneMaterial = new THREE.MeshStandardMaterial({ color: '#78c28f' })
+const childBoneMaterial = new THREE.MeshStandardMaterial({ color: '#69afe5' })
+const lineMaterial = new THREE.LineBasicMaterial({ color: '#d6e1e4' })
 
 function BVHScene({ bvhData, frameIndex }: { bvhData: BVHDataInternal | null, frameIndex: number }) {
   const groupRef = useRef<THREE.Group>(null)
@@ -233,14 +233,14 @@ export default function BVHViewer({ bvhUrl, bvhData, frameIndex }: BVHViewerProp
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {loading && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#fff' }}>Loading...</div>}
-      {error && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'red' }}>{error}</div>}
-      {!loading && !error && !finalBvhData && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#888' }}>No BVH file loaded</div>}
+      {loading && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'var(--text)' }}>Loading...</div>}
+      {error && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'var(--danger)' }}>{error}</div>}
+      {!loading && !error && !finalBvhData && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'var(--text-dim)' }}>No BVH file loaded</div>}
       <Canvas camera={{ position: [0, 5, 15], fov: 50 }}>
         <ambientLight intensity={0.5} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
         <BVHScene bvhData={finalBvhData} frameIndex={frameIndex} />
-        <gridHelper args={[20, 20, 0x444444, 0x222222]} />
+        <gridHelper args={[20, 20, 0x6f808a, 0x44535c]} />
         <OrbitControls />
       </Canvas>
     </div>

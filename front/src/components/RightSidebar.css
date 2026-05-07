@@ -1,56 +1,70 @@
 .right-sidebar {
   width: 320px;
-  background-color: #383838;
-  border-left: 1px solid #555;
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  box-shadow: var(--shadow-panel);
 }
 
 .right-sidebar-header {
-  background-color: #484848;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: bold;
-  color: #ccc;
+  background: var(--panel-soft);
+  padding: 12px 14px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .right-sidebar-content {
-  padding: 8px;
+  padding: 10px;
 }
 
-/* 文件项 - 左右布局 */
 .file-item {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
-  margin: 2px 0;
-  border-radius: 4px;
+  padding: 11px 12px;
+  margin: 4px 0;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background-color 0.15s;
+  color: var(--text-muted);
+  background: var(--panel-muted);
+  border: 1px solid transparent;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 
 .file-item:hover {
-  background-color: #4d4d4d;
+  background: var(--panel-hover);
+  border-color: var(--line-soft);
+  color: var(--text);
+  transform: translateY(-1px);
 }
 
 .file-item.selected {
-  background-color: #ff9a00;
-  color: #1a1a1a;
+  background: var(--accent);
+  border-color: var(--accent-line);
+  color: var(--accent-ink);
 }
 
 .file-item.disabled {
-  color: #888;
+  color: var(--text-dim);
   cursor: not-allowed;
+  justify-content: center;
+  background: var(--panel-faint);
 }
 
 .file-item.disabled:hover {
-  background-color: transparent;
+  background: var(--panel-faint);
+  border-color: transparent;
+  transform: none;
 }
 
-/* 左侧：颜色点 + 文件名 */
 .file-left {
   display: flex;
   align-items: center;
@@ -59,23 +73,22 @@
   overflow: hidden;
 }
 
-/* 颜色点 */
 .file-dot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  margin-right: 8px;
+  margin-right: 9px;
+  box-shadow: 0 0 14px currentColor;
 }
 
-/* 文件名 */
 .file-name {
   font-size: 13px;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* 右侧：角色标签 + 删除按钮 */
 .file-right {
   display: flex;
   align-items: center;
@@ -84,35 +97,47 @@
   flex-shrink: 0;
 }
 
-/* 角色标签 */
 .file-role-tag {
   font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 3px;
-  background-color: rgba(255, 255, 255, 0.1);
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: var(--radius-sm);
+  background-color: rgba(255, 255, 255, 0.075);
 }
 
 .file-item.selected .file-role-tag {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.16);
 }
 
-/* 删除按钮 */
 .remove-btn {
+  width: 22px;
+  height: 22px;
   background: transparent;
-  border: none;
-  color: #888;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
   font-size: 16px;
   cursor: pointer;
   padding: 0;
   line-height: 1;
-  transition: color 0.15s;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
 .remove-btn:hover {
-  color: #ff4444;
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: rgba(220, 113, 107, 0.26);
 }
 
-/* Result 项样式 */
+.file-item.selected .remove-btn {
+  color: rgba(23, 18, 10, 0.72);
+}
+
+.file-item.selected .remove-btn:hover {
+  color: var(--danger-ink);
+  background: rgba(0, 0, 0, 0.12);
+}
+
 .result-item {
-  margin-top: 8px;
+  margin-top: 10px;
 }

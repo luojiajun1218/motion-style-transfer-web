@@ -243,16 +243,16 @@ export default function StyleLibrary({
                     setRenameIndex(index)
                     setRenameValue(style.name)
                   }}
-                  title="重命名"
+                  title="Rename"
                 >
-                  ✎
+                  edit
                 </button>
                 <button
                   className="custom-action-btn delete"
                   onClick={() => setDeleteIndex(index)}
-                  title="删除"
+                  title="Delete"
                 >
-                  ×
+                  x
                 </button>
               </div>
             ))}

@@ -234,8 +234,8 @@ export default function Home() {
     <div className="home-container">
       {/* Header */}
       <div className="home-header">
-        <span className="home-title">Motion Style Transfer System</span>
-        <span className="home-style-tag">Blender</span>
+        <span className="home-title">Motion Style Transfer</span>
+        <span className="home-style-tag">BVH Workbench</span>
       </div>
 
       {/* Main layout */}

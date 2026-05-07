@@ -33,7 +33,6 @@ export default function PlaybackBar({
 
   return (
     <div className="status-bar">
-      {/* 左侧：播放控制按钮 */}
       <div className="status-controls">
         <button
           className="status-btn"
@@ -47,20 +46,18 @@ export default function PlaybackBar({
           className="status-btn play-btn"
           onClick={handlePlayPause}
           disabled={maxFrames === 0}
-          title={isPlaying ? "Pause" : "Play"}
+          title={isPlaying ? 'Pause' : 'Play'}
         >
           {isPlaying ? '⏸' : '▶'}
         </button>
       </div>
 
-      {/* 帧数显示 */}
       <div className="status-frame">
         <span className="frame-current">{frameIndex}</span>
         <span className="frame-divider">/</span>
         <span className="frame-total">{maxFrames}</span>
       </div>
 
-      {/* 时间线滑块 */}
       <div className="status-timeline">
         <div className="timeline-track">
           <div
@@ -82,7 +79,6 @@ export default function PlaybackBar({
         </div>
       </div>
 
-      {/* 右侧：FPS */}
       <div className="status-right">
         <span className="status-fps">{fps} fps</span>
       </div>

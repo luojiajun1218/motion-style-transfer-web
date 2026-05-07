@@ -250,25 +250,26 @@ export default function UnifiedCanvas({
   const styleFile = allFiles.find(f => f.role === 'style')
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#484848' }}>
-      {loading && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#e0e0e0' }}>Loading...</div>}
-      {!hasAnyData && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#888' }}>No BVH files loaded</div>}
-      <Canvas camera={{ position: [0, 25, 40], fov: 50 }}>
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[10, 10, 5]} intensity={1} />
+    <div className="canvas-shell">
+      {loading && <div className="canvas-state">Loading motion data...</div>}
+      {!hasAnyData && <div className="canvas-state">Drop in a BVH file to start</div>}
+      <Canvas camera={{ position: [0, 25, 40], fov: 50 }} onCreated={({ gl }) => gl.setClearColor('#10191f')}>
+        <color attach="background" args={['#10191f']} />
+        <ambientLight intensity={0.68} />
+        <directionalLight position={[10, 10, 5]} intensity={1.15} />
 
         <ClickDetector allFiles={allFiles} onFileSelect={onFileSelect} onSkeletonSelect={onSkeletonSelect} />
 
         <CameraController allFiles={allFiles} resultData={resultData} loadedResultData={loadedResultData} controlsRef={controlsRef} />
 
         {/* Source */}
-        <SkeletonGroup bvhData={sourceFile?.parsedData ?? null} frameIndex={frameIndex} xOffset={-6} color="#00ff88" label="Source" isSelected={selectedSkeleton === 'source'} skeletonType="source" />
+        <SkeletonGroup bvhData={sourceFile?.parsedData ?? null} frameIndex={frameIndex} xOffset={-6} color="#78c28f" label="Source" isSelected={selectedSkeleton === 'source'} skeletonType="source" />
 
         {/* Style */}
-        <SkeletonGroup bvhData={styleFile?.parsedData ?? null} frameIndex={frameIndex} xOffset={0} color="#4a90e2" label="Style" isSelected={selectedSkeleton === 'style'} skeletonType="style" />
+        <SkeletonGroup bvhData={styleFile?.parsedData ?? null} frameIndex={frameIndex} xOffset={0} color="#69afe5" label="Style" isSelected={selectedSkeleton === 'style'} skeletonType="style" />
 
         {/* Result */}
-        <SkeletonGroup bvhData={effectiveResultData} frameIndex={frameIndex} xOffset={6} color="#ff9a00" label="Result" isSelected={selectedSkeleton === 'result'} skeletonType="result" />
+        <SkeletonGroup bvhData={effectiveResultData} frameIndex={frameIndex} xOffset={6} color="#d5bf62" label="Result" isSelected={selectedSkeleton === 'result'} skeletonType="result" />
 
         {/* Unassigned files */}
         {unassignedFiles.map((f, i) => {
@@ -280,7 +281,7 @@ export default function UnifiedCanvas({
               bvhData={f.parsedData}
               frameIndex={frameIndex}
               xOffset={12 + i * 6}
-              color="#cccccc"
+              color="#98a7ad"
               label=""
               isSelected={isSelected}
               showLabel={false}
@@ -289,7 +290,7 @@ export default function UnifiedCanvas({
           )
         })}
 
-        <gridHelper args={[30, 30, 0xaaaaaa, 0x888888]} />
+        <gridHelper args={[30, 30, 0x4d626c, 0x283942]} />
         <OrbitControls ref={controlsRef as any} makeDefault />
       </Canvas>
     </div>

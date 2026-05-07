@@ -12,9 +12,9 @@ interface RightSidebarProps {
 }
 
 const roleColors = {
-  source: '#00ff88',
-  style: '#4a90e2',
-  unassigned: '#cccccc'
+  source: 'var(--source)',
+  style: 'var(--style)',
+  unassigned: 'var(--unassigned)'
 }
 
 const roleLabels = {
@@ -84,7 +84,7 @@ export default function RightSidebar({
               {/* 右侧：角色标签 + 删除按钮 */}
               <div className="file-right">
                 {roleLabel && (
-                  <span className="file-role-tag" style={{ color: isSelected ? '#1a1a1a' : roleColor }}>
+                  <span className="file-role-tag" style={{ color: isSelected ? 'var(--accent-ink)' : roleColor }}>
                     {roleLabel}
                   </span>
                 )}
@@ -96,7 +96,7 @@ export default function RightSidebar({
                   }}
                   title="Remove"
                 >
-                  ×
+                  x
                 </button>
               </div>
             </div>
@@ -111,12 +111,12 @@ export default function RightSidebar({
           >
             {/* 左侧 */}
             <div className="file-left">
-              <div className="file-dot" style={{ backgroundColor: '#ff9a00' }} />
+              <div className="file-dot" style={{ backgroundColor: 'var(--result)' }} />
               <span className="file-name">{resultFileName}</span>
             </div>
             {/* 右侧 */}
             <div className="file-right">
-              <span className="file-role-tag" style={{ color: selectedSkeleton === 'result' ? '#1a1a1a' : '#ff9a00' }}>
+              <span className="file-role-tag" style={{ color: selectedSkeleton === 'result' ? 'var(--accent-ink)' : 'var(--result)' }}>
                 Result
               </span>
             </div>

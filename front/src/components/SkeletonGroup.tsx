@@ -44,9 +44,9 @@ export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, lab
   useEffect(() => {
     if (isSelected) {
       // 选中时：更亮的颜色 + 不透明
-      boneMaterial.current.color.setStyle('#ffffff')
+      boneMaterial.current.color.setStyle('#f4f7f5')
       boneMaterial.current.emissive = new THREE.Color(color)
-      boneMaterial.current.emissiveIntensity = 2.0
+      boneMaterial.current.emissiveIntensity = 1.15
       boneMaterial.current.opacity = 1
       lineMaterial.current.color.setStyle(color)
       lineMaterial.current.opacity = 1

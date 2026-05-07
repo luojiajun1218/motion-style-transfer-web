@@ -17,10 +17,6 @@ export default function TransferButton({ onClick, disabled, loading = false }: {
       onClick={handleClick}
       disabled={disabled || loading}
       className="blender-btn blender-btn-primary"
-      style={{
-        width: '100%',
-        opacity: disabled ? 0.5 : 1
-      }}
     >
       {loading ? 'Processing...' : 'Start Transfer'}
     </button>

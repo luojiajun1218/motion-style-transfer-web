@@ -60,20 +60,12 @@ export default function LeftSidebar({
               <button
                 className="blender-btn"
                 onClick={() => handleRoleClick('source')}
-                style={{
-                  borderColor: '#555',
-                  width: '100%'
-                }}
               >
                 Set as Source
               </button>
               <button
                 className="blender-btn"
                 onClick={() => handleRoleClick('style')}
-                style={{
-                  borderColor: '#555',
-                  width: '100%'
-                }}
               >
                 Set as Style
               </button>
