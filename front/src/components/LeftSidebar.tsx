@@ -1,3 +1,4 @@
+import type { Dispatch, SetStateAction } from 'react'
 import FileUploader from './FileUploader'
 import TransferButton from './TransferButton'
 import StyleLibrary from './StyleLibrary'
@@ -17,6 +18,7 @@ interface LeftSidebarProps {
   onTransferComplete: (resultId: string) => void
   setTransferLoading: (loading: boolean) => void
   setTransferStep: (step: TransferStep) => void
+  setBvhFiles: Dispatch<SetStateAction<BVHFileWithRole[]>>
 }
 
 export default function LeftSidebar({
@@ -29,7 +31,8 @@ export default function LeftSidebar({
   bvhFiles,
   onTransferComplete,
   setTransferLoading,
-  setTransferStep
+  setTransferStep,
+  setBvhFiles
 }: LeftSidebarProps) {
 
   const handleRoleClick = (role: 'source' | 'style') => {
@@ -106,6 +109,7 @@ export default function LeftSidebar({
           transferLoading={transferLoading}
           setTransferLoading={setTransferLoading}
           setTransferStep={setTransferStep}
+          setBvhFiles={setBvhFiles}
         />
       </div>
     </div>
