@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Text, Billboard } from '@react-three/drei'
 import * as THREE from 'three'
 import { SkeletonUtils } from 'three-stdlib'
-import { ParsedBVHData } from '../services/api'
+import { ParsedBVHData } from '../types'
 
 interface SkeletonGroupProps {
   bvhData: ParsedBVHData | null
@@ -18,6 +18,11 @@ interface SkeletonGroupProps {
 
 // Cached geometry - shared across all skeletons
 const sphereGeometry = new THREE.SphereGeometry(0.15, 8, 8)
+
+// Reusable Vector3 objects to avoid GC pressure in useFrame
+const tempPos = new THREE.Vector3()
+const tempParentPos = new THREE.Vector3()
+const tempChildPos = new THREE.Vector3()
 
 export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, label, isSelected = false, showLabel = true, skeletonType }: SkeletonGroupProps) {
   const groupRef = useRef<THREE.Group>(null)
@@ -130,21 +135,8 @@ export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, lab
     clonedBones.forEach((bone, i) => {
       const mesh = boneMeshRefs.current[i]
       if (mesh) {
-        const pos = new THREE.Vector3()
-        bone.getWorldPosition(pos)
-        mesh.position.set(pos.x, pos.y, pos.z)
-
-        // Debug: compare first 3 bones
-        if (i < 3) {
-          // Calculate expected position from bone.position chain
-          const expectedPos = new THREE.Vector3()
-          let current: THREE.Object3D | null = bone
-          while (current) {
-            expectedPos.add(current.position)
-            current = current.parent
-          }
-          console.log(`[SkeletonGroup] Bone ${bone.name}: expected(${expectedPos.x.toFixed(2)}, ${expectedPos.y.toFixed(2)}, ${expectedPos.z.toFixed(2)}) vs getWorldPosition(${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)})`)
-        }
+        bone.getWorldPosition(tempPos)
+        mesh.position.set(tempPos.x, tempPos.y, tempPos.z)
       }
     })
 
@@ -156,14 +148,12 @@ export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, lab
       const parent = bone.parent
       if (!parent) return
 
-      const parentPos = new THREE.Vector3()
-      const childPos = new THREE.Vector3()
-      parent.getWorldPosition(parentPos)
-      bone.getWorldPosition(childPos)
+      parent.getWorldPosition(tempParentPos)
+      bone.getWorldPosition(tempChildPos)
 
       const positionAttr = line.geometry.attributes.position as THREE.BufferAttribute
-      positionAttr.setXYZ(0, parentPos.x, parentPos.y, parentPos.z)
-      positionAttr.setXYZ(1, childPos.x, childPos.y, childPos.z)
+      positionAttr.setXYZ(0, tempParentPos.x, tempParentPos.y, tempParentPos.z)
+      positionAttr.setXYZ(1, tempChildPos.x, tempChildPos.y, tempChildPos.z)
       positionAttr.needsUpdate = true
     })
 
@@ -208,9 +198,8 @@ export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, lab
     boneMeshRefs.current.forEach((mesh, i) => {
       if (i >= clonedBones.length) return
       const bone = clonedBones[i]
-      const pos = new THREE.Vector3()
-      bone.getWorldPosition(pos)
-      mesh.position.set(pos.x, pos.y, pos.z)
+      bone.getWorldPosition(tempPos)
+      mesh.position.set(tempPos.x, tempPos.y, tempPos.z)
     })
 
     // Update line positions using cloned bones
@@ -221,14 +210,12 @@ export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, lab
       const parent = bone.parent
       if (!parent) return
 
-      const parentPos = new THREE.Vector3()
-      const childPos = new THREE.Vector3()
-      parent.getWorldPosition(parentPos)
-      bone.getWorldPosition(childPos)
+      parent.getWorldPosition(tempParentPos)
+      bone.getWorldPosition(tempChildPos)
 
       const positionAttr = line.geometry.attributes.position as THREE.BufferAttribute
-      positionAttr.setXYZ(0, parentPos.x, parentPos.y, parentPos.z)
-      positionAttr.setXYZ(1, childPos.x, childPos.y, childPos.z)
+      positionAttr.setXYZ(0, tempParentPos.x, tempParentPos.y, tempParentPos.z)
+      positionAttr.setXYZ(1, tempChildPos.x, tempChildPos.y, tempChildPos.z)
       positionAttr.needsUpdate = true
     })
 
@@ -237,12 +224,11 @@ export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, lab
       // Calculate skeleton center (average X/Z) and lowest Y
       let sumX = 0, sumZ = 0, lowestY = Infinity
       clonedBones.forEach((bone) => {
-        const pos = new THREE.Vector3()
-        bone.getWorldPosition(pos)
-        sumX += pos.x
-        sumZ += pos.z
-        if (pos.y < lowestY) {
-          lowestY = pos.y
+        bone.getWorldPosition(tempPos)
+        sumX += tempPos.x
+        sumZ += tempPos.z
+        if (tempPos.y < lowestY) {
+          lowestY = tempPos.y
         }
       })
       const centerX = sumX / clonedBones.length

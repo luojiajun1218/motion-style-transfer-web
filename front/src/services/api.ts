@@ -1,7 +1,8 @@
 import axios from 'axios'
 import * as THREE from 'three'
+import { debugLog } from '../utils/debug'
 
-// 开发环境使用 Vite 代理（/api -> localhost:8000），生产环境需要配置实际后端地址
+// 开发环境使用 Vite 代理（/api -> localhost:9000），生产环境需要配置实际后端地址
 const API_BASE_URL = '/api'
 
 export interface UploadResponse {
@@ -91,7 +92,7 @@ export function calculateBVHBounds(boneGroup: THREE.Group, clip?: THREE.Animatio
   bounds.getSize(size)
   bounds.getCenter(center)
 
-  console.log('[calculateBVHBounds] bounds center=', center.x.toFixed(2), center.y.toFixed(2), center.z.toFixed(2), 'size=', size.x.toFixed(2), size.y.toFixed(2), size.z.toFixed(2))
+  debugLog('calculateBVHBounds', `center=${center.x.toFixed(2)},${center.y.toFixed(2)},${center.z.toFixed(2)} size=${size.x.toFixed(2)},${size.y.toFixed(2)},${size.z.toFixed(2)}`)
 
   return { bounds, size, center }
 }
@@ -116,4 +117,32 @@ export const transferStyle = async (sourceId: string, styleId: string): Promise<
 
 export const getBVHUrl = (fileId: string): string => {
   return `${API_BASE_URL}/file/${fileId}`
+}
+
+// 预设风格相关类型
+export interface PresetStyle {
+  id: string
+  name: string
+  file_id: string
+}
+
+export interface PresetStylesResponse {
+  emotion: PresetStyle[]
+  body: PresetStyle[]
+}
+
+export interface PresetFileIdResponse {
+  file_id: string
+}
+
+// 获取预设风格列表
+export const getPresetStyles = async (): Promise<PresetStylesResponse> => {
+  const response = await axios.get<PresetStylesResponse>(`${API_BASE_URL}/preset/styles`)
+  return response.data
+}
+
+// 获取指定预设风格的 file_id
+export const getPresetFileId = async (styleId: string): Promise<PresetFileIdResponse> => {
+  const response = await axios.get<PresetFileIdResponse>(`${API_BASE_URL}/preset/${styleId}`)
+  return response.data
 }

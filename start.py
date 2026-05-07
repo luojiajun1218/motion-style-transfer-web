@@ -43,12 +43,12 @@ def main():
 
     try:
         # 启动后端 (FastAPI)
-        print("\n[后端] 启动 FastAPI 服务 (端口 8000)...")
+        print("\n[后端] 启动 FastAPI 服务 (端口 9000)...")
         backend_cmd = [
             sys.executable, "-m", "uvicorn",
             "back.server.main:app",
             "--host", "0.0.0.0",
-            "--port", "8000"
+            "--port", "9000"
         ]
         backend_proc = subprocess.Popen(
             backend_cmd,
@@ -79,7 +79,7 @@ def main():
 
         print("\n" + "=" * 50)
         print("服务已启动:")
-        print("  后端 API:  http://localhost:8000")
+        print("  后端 API:  http://localhost:9000")
         print("  前端界面:  http://localhost:3000")
         print("=" * 50)
         print("\n按 Ctrl+C 停止所有服务...")

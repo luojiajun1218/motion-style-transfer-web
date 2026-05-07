@@ -1,14 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import UnifiedCanvas from '../components/UnifiedCanvas'
 import LeftSidebar from '../components/LeftSidebar'
 import RightSidebar from '../components/RightSidebar'
 import PlaybackBar from '../components/PlaybackBar'
-import { uploadBVH, transferStyle, BVHFileState, LocalFileResult, TransferResponse } from '../services/api'
-
-// 扩展 BVHFileState，增加 role 属性
-interface BVHFileWithRole extends BVHFileState {
-  role: 'unassigned' | 'source' | 'style'
-}
+import TransferProgress, { TransferStep } from '../components/TransferProgress'
+import { uploadBVH, transferStyle, BVHFileState, LocalFileResult, TransferResponse, BVHFileWithRole } from '../types'
 
 const defaultFileState: BVHFileState = {
   file: null,
@@ -21,23 +17,23 @@ export default function Home() {
   // 改为 BVH 文件列表，每个文件可分配角色
   const [bvhFiles, setBvhFiles] = useState<BVHFileWithRole[]>([])
   const [result, setResult] = useState<BVHFileState>(defaultFileState)
-  const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null)  // 新增：当前选中的文件
-
-  // 计算 result 文件名
-  const resultFileName = result.file?.name ?? (result.fileId ? 'Output' : null)
-
+  const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null)
   const [frameIndex, setFrameIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [transferLoading, setTransferLoading] = useState(false)
+  const [transferStep, setTransferStep] = useState<TransferStep>('idle')
+  const [transferError, setTransferError] = useState<string | undefined>()
   const [selectedSkeleton, setSelectedSkeleton] = useState<'source' | 'style' | 'result' | number | null>(null)
-  // number表示unassigned文件的索引
 
-  const playIntervalRef = useRef<number | null>(null)
+  const playIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fps = 30
 
   // 从列表中获取 source 和 style 文件
   const sourceFile = bvhFiles.find(f => f.role === 'source')
   const styleFile = bvhFiles.find(f => f.role === 'style')
+
+  // 计算 result 文件名
+  const resultFileName = result.file?.name ?? (result.fileId ? 'Output' : null)
 
   // Calculate max frames from loaded data
   const maxFrames = Math.max(
@@ -56,6 +52,34 @@ export default function Home() {
     }
   }, [])
 
+  // 播放/暂停函数（用 useCallback 包裹避免闭包问题）
+  const handlePlay = useCallback(() => {
+    if (isPlaying) return
+    setIsPlaying(true)
+
+    playIntervalRef.current = setInterval(() => {
+      setFrameIndex(prev => {
+        if (prev >= maxFrames - 1) {
+          setIsPlaying(false)
+          if (playIntervalRef.current) {
+            clearInterval(playIntervalRef.current)
+            playIntervalRef.current = null
+          }
+          return prev
+        }
+        return prev + 1
+      })
+    }, 1000 / fps)
+  }, [isPlaying, maxFrames, fps])
+
+  const handlePause = useCallback(() => {
+    setIsPlaying(false)
+    if (playIntervalRef.current) {
+      clearInterval(playIntervalRef.current)
+      playIntervalRef.current = null
+    }
+  }, [])
+
   // Space key to toggle play/pause (exclude input/textarea focus)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -67,7 +91,7 @@ export default function Home() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isPlaying])
+  }, [isPlaying, handlePlay, handlePause])
 
   // 导入 BVH 文件（统一入口）
   const handleFileImport = (data: LocalFileResult) => {
@@ -121,13 +145,17 @@ export default function Home() {
     if (!sourceFile?.file || !styleFile?.file) return null
 
     setTransferLoading(true)
+    setTransferError(undefined)
+    setTransferStep('idle')
     setIsPlaying(false)
 
     try {
       let sourceId = sourceFile.fileId
       let styleId = styleFile.fileId
 
+      // Step 1: Upload source if needed
       if (!sourceFile.isUploaded) {
+        setTransferStep('upload-source')
         const uploadResult = await uploadBVH(sourceFile.file)
         sourceId = uploadResult.id
         setBvhFiles(prev => prev.map(f =>
@@ -135,7 +163,9 @@ export default function Home() {
         ))
       }
 
+      // Step 2: Upload style if needed
       if (!styleFile.isUploaded) {
+        setTransferStep('upload-style')
         const uploadResult = await uploadBVH(styleFile.file)
         styleId = uploadResult.id
         setBvhFiles(prev => prev.map(f =>
@@ -144,65 +174,53 @@ export default function Home() {
       }
 
       if (!sourceId || !styleId) {
-        setTransferLoading(false)
         throw new Error('Upload failed: missing file ID')
       }
 
+      // Step 3: Execute style transfer
+      setTransferStep('transferring')
       const response = await transferStyle(sourceId, styleId)
+
+      // Step 4: Loading result (brief pause to show completion)
+      setTransferStep('loading-result')
       setResult({ file: null, parsedData: null, fileId: response.result_id, isUploaded: true })
+
+      // Complete
+      setTransferStep('completed')
       setTransferLoading(false)
+
+      // Auto-hide after 1.5 seconds
+      setTimeout(() => {
+        setTransferStep('idle')
+      }, 1500)
+
       return response
     } catch (error) {
       console.error('Transfer failed:', error)
+      setTransferStep('error')
+      setTransferError(error instanceof Error ? error.message : 'Unknown error')
       setTransferLoading(false)
       throw error
     }
   }
 
-  const handlePlay = () => {
-    if (isPlaying) return
-    setIsPlaying(true)
-    
-    playIntervalRef.current = window.setInterval(() => {
-      setFrameIndex(prev => {
-        if (prev >= maxFrames - 1) {
-          setIsPlaying(false)
-          if (playIntervalRef.current) {
-            clearInterval(playIntervalRef.current)
-            playIntervalRef.current = null
-          }
-          return prev
-        }
-        return prev + 1
-      })
-    }, 1000 / fps)
-  }
-
-  const handlePause = () => {
-    setIsPlaying(false)
-    if (playIntervalRef.current) {
-      clearInterval(playIntervalRef.current)
-      playIntervalRef.current = null
-    }
-  }
-
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setIsPlaying(false)
     if (playIntervalRef.current) {
       clearInterval(playIntervalRef.current)
       playIntervalRef.current = null
     }
     setFrameIndex(0)
-  }
+  }, [])
 
-  const handleFrameChange = (frame: number) => {
+  const handleFrameChange = useCallback((frame: number) => {
     setIsPlaying(false)
     if (playIntervalRef.current) {
       clearInterval(playIntervalRef.current)
       playIntervalRef.current = null
     }
     setFrameIndex(frame)
-  }
+  }, [])
 
   const handleSkeletonSelect = (skeleton: 'source' | 'style' | 'result' | number | null) => {
     setSelectedSkeleton(skeleton)
@@ -225,11 +243,19 @@ export default function Home() {
         {/* Left Sidebar */}
         <LeftSidebar
           selectedFileIndex={selectedFileIndex}
-          onFileImport={(data) => handleFileImport(data as LocalFileResult)}
+          onFileImport={handleFileImport}
           onRoleAssign={handleRoleAssign}
           onTransfer={async () => { await handleTransfer() }}
           transferDisabled={!sourceFile?.file || !styleFile?.file}
           transferLoading={transferLoading}
+          bvhFiles={bvhFiles}
+          onTransferComplete={(resultId) => {
+            setResult({ file: null, parsedData: null, fileId: resultId, isUploaded: true })
+            setTransferStep('completed')
+            setTimeout(() => setTransferStep('idle'), 1500)
+          }}
+          setTransferLoading={setTransferLoading}
+          setTransferStep={setTransferStep}
         />
 
         {/* Canvas Area */}
@@ -267,6 +293,13 @@ export default function Home() {
         onPause={handlePause}
         onReset={handleReset}
         fps={fps}
+      />
+
+      {/* Transfer Progress Modal */}
+      <TransferProgress
+        isVisible={transferStep !== 'idle'}
+        step={transferStep}
+        errorMessage={transferError}
       />
     </div>
   )

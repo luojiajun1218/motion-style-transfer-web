@@ -1,19 +1,10 @@
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
-import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import SkeletonGroup from './SkeletonGroup'
-import { ParsedBVHData, getBVHUrl, calculateBVHBounds } from '../services/api'
+import { BVHFileWithRole, ParsedBVHData, getBVHUrl, calculateBVHBounds } from '../types'
 import { useState, useEffect, useCallback, useRef } from 'react'
-
-// BVH 文件状态（带角色）
-interface BVHFileWithRole {
-  file: File | null
-  parsedData: ParsedBVHData | null
-  fileId: string | null
-  isUploaded: boolean
-  role: 'unassigned' | 'source' | 'style'
-}
 
 interface UnifiedCanvasProps {
   allFiles: BVHFileWithRole[]
@@ -168,7 +159,7 @@ function CameraController({
       controlsRef.current.update()
     }
 
-    console.log('[CameraController] center=', center.x.toFixed(2), center.y.toFixed(2), center.z.toFixed(2), 'distance=', distance.toFixed(2))
+    // debugLog('[CameraController]', `center=${center.x.toFixed(2)},${center.y.toFixed(2)},${center.z.toFixed(2)} distance=${distance.toFixed(2)}`)
   }, [allFiles, resultData, loadedResultData, camera, controlsRef])
 
   useEffect(() => {
@@ -193,10 +184,13 @@ export default function UnifiedCanvas({
   const [loadedResultData, setLoadedResultData] = useState<ParsedBVHData | null>(null)
   const [loading, setLoading] = useState(false)
   const controlsRef = useRef<OrbitControlsImpl | null>(null)
+  const isMountedRef = useRef(true)
 
   const unassignedFiles = allFiles.filter(f => f.role === 'unassigned')
 
   useEffect(() => {
+    isMountedRef.current = true
+
     if (resultData) { setLoadedResultData(null); return }
     if (!resultFileId) { setLoadedResultData(null); return }
 
@@ -206,6 +200,8 @@ export default function UnifiedCanvas({
     import('three/examples/jsm/loaders/BVHLoader').then(({ BVHLoader }) => {
       const loader = new BVHLoader()
       loader.load(url, (result) => {
+        if (!isMountedRef.current) return  // 组件已卸载，不更新状态
+
         const boneGroup = new THREE.Group()
         const rootBones = result.skeleton.bones.filter(
           (bone: THREE.Bone) => !bone.parent || !(bone.parent instanceof THREE.Bone)
@@ -233,8 +229,17 @@ export default function UnifiedCanvas({
           bounds, boundsSize: size, boundsCenter: center
         })
         setLoading(false)
-      }, undefined, (err: unknown) => { console.error('Load failed:', err); setLoading(false) })
+      }, undefined, (err: unknown) => {
+        if (!isMountedRef.current) return
+        console.error('Load failed:', err)
+        setLoading(false)
+      })
     })
+
+    return () => {
+      isMountedRef.current = false
+      setLoadedResultData(null)
+    }
   }, [resultFileId, resultData])
 
   const effectiveResultData = resultData || loadedResultData
@@ -285,7 +290,7 @@ export default function UnifiedCanvas({
         })}
 
         <gridHelper args={[30, 30, 0xaaaaaa, 0x888888]} />
-        <OrbitControls ref={controlsRef} makeDefault />
+        <OrbitControls ref={controlsRef as any} makeDefault />
       </Canvas>
     </div>
   )

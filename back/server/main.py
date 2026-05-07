@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from back.server.routers.bvh import router
+from back.server.routers.bvh import router as bvh_router
+from back.server.routers.preset import router as preset_router
 
 app = FastAPI(
     title="Motion Style Transfer API",
@@ -18,7 +19,8 @@ app.add_middleware(
 )
 
 # 注册路由
-app.include_router(router)
+app.include_router(bvh_router)
+app.include_router(preset_router)
 
 
 @app.get("/")
@@ -28,4 +30,5 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # 使用端口 9000 避开 Windows Hyper-V 保留端口范围 7998-8097
+    uvicorn.run(app, host="0.0.0.0", port=9000)

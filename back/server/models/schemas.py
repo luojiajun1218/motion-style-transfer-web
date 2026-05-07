@@ -22,3 +22,16 @@ class FileInfo(BaseModel):
     id: str
     filename: str
     path: str
+
+
+class PresetStyle(BaseModel):
+    """单个预设风格"""
+    id: str
+    name: str
+    file_id: str
+
+
+class PresetStylesResponse(BaseModel):
+    """预设风格列表响应"""
+    emotion: list[PresetStyle]
+    body: list[PresetStyle]

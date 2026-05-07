@@ -1,13 +1,5 @@
 import './RightSidebar.css'
-
-// 定义 BVH 文件状态（带角色）
-interface BVHFileWithRole {
-  file: File | null
-  parsedData: any
-  fileId: string | null
-  isUploaded: boolean
-  role: 'unassigned' | 'source' | 'style'
-}
+import { BVHFileWithRole } from '../types'
 
 interface RightSidebarProps {
   bvhFiles: BVHFileWithRole[]
@@ -76,10 +68,11 @@ export default function RightSidebar({
           const isSelected = selectedFileIndex === index
           const roleLabel = roleLabels[bvhFile.role]
           const roleColor = roleColors[bvhFile.role]
+          const key = bvhFile.fileId || `file-${index}`
 
           return (
             <div
-              key={index}
+              key={key}
               className={`file-item ${isSelected ? 'selected' : ''}`}
               onClick={() => handleFileClick(index)}
             >

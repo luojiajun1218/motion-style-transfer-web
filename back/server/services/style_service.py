@@ -9,6 +9,7 @@ sys.path.insert(0, project_root)
 
 from back.demo import style_transfer
 from back.server.services.file_storage import FileStorage
+from back.server.services.preset_service import PresetService
 
 
 class StyleService:
@@ -16,14 +17,26 @@ class StyleService:
 
     def __init__(self, storage: FileStorage):
         self.storage = storage
+        self.preset_service = PresetService()
+
+    def _get_file_path(self, file_id: str) -> str | None:
+        """获取文件路径，支持预设风格和普通上传文件"""
+        # 先检查预设风格
+        preset_path = self.preset_service.get_path(file_id)
+        if preset_path:
+            return preset_path
+        # 再检查上传文件
+        return self.storage.get_path(file_id)
 
     def execute_transfer(self, source_id: str, style_id: str) -> dict:
         """执行风格迁移"""
-        source_path = self.storage.get_path(source_id)
-        style_path = self.storage.get_path(style_id)
+        source_path = self._get_file_path(source_id)
+        style_path = self._get_file_path(style_id)
 
-        if not source_path or not style_path:
-            raise ValueError("Source or style file not found")
+        if not source_path:
+            raise ValueError(f"Source file not found: {source_id}")
+        if not style_path:
+            raise ValueError(f"Style file not found: {style_id}")
 
         # 生成临时结果文件路径
         temp_result_path = os.path.join(

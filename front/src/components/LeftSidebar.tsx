@@ -1,14 +1,22 @@
 import FileUploader from './FileUploader'
 import TransferButton from './TransferButton'
+import StyleLibrary from './StyleLibrary'
 import './LeftSidebar.css'
+import { BVHFileWithRole, LocalFileResult } from '../types'
+import { TransferStep } from './TransferProgress'
 
 interface LeftSidebarProps {
   selectedFileIndex: number | null
-  onFileImport: (data: { file: File }) => void
+  onFileImport: (data: LocalFileResult) => void
   onRoleAssign: (role: 'source' | 'style') => void
   onTransfer: () => Promise<void>
   transferDisabled: boolean
   transferLoading: boolean
+  // 新增 props
+  bvhFiles: BVHFileWithRole[]
+  onTransferComplete: (resultId: string) => void
+  setTransferLoading: (loading: boolean) => void
+  setTransferStep: (step: TransferStep) => void
 }
 
 export default function LeftSidebar({
@@ -17,7 +25,11 @@ export default function LeftSidebar({
   onRoleAssign,
   onTransfer,
   transferDisabled,
-  transferLoading
+  transferLoading,
+  bvhFiles,
+  onTransferComplete,
+  setTransferLoading,
+  setTransferStep
 }: LeftSidebarProps) {
 
   const handleRoleClick = (role: 'source' | 'style') => {
@@ -32,7 +44,7 @@ export default function LeftSidebar({
           <div className="file-row">
             <span className="file-label">Import BVH:</span>
             <FileUploader
-              onSelect={onFileImport}
+              onSelect={onFileImport as (result: LocalFileResult) => void}
               label="Import BVH File"
             />
           </div>
@@ -82,6 +94,19 @@ export default function LeftSidebar({
             <span className="transfer-status">Processing...</span>
           )}
         </div>
+      </div>
+
+      {/* 风格库 */}
+      <div className="sidebar-section">
+        <div className="sidebar-title">STYLE LIBRARY</div>
+        <StyleLibrary
+          bvhFiles={bvhFiles}
+          selectedFileIndex={selectedFileIndex}
+          onTransferComplete={onTransferComplete}
+          transferLoading={transferLoading}
+          setTransferLoading={setTransferLoading}
+          setTransferStep={setTransferStep}
+        />
       </div>
     </div>
   )

@@ -1,0 +1,233 @@
+.style-library {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+/* 预设风格 */
+.preset-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preset-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: #aaa;
+  letter-spacing: 0.5px;
+}
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.preset-btn {
+  background-color: #484848;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.preset-btn:hover:not(:disabled) {
+  background-color: #505050;
+}
+
+.preset-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 自定义风格 */
+.custom-section {
+  border-top: 1px solid #303030;
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.custom-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: #aaa;
+  letter-spacing: 0.5px;
+}
+
+.custom-empty {
+  font-size: 12px;
+  color: #888;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.custom-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.custom-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.custom-apply-btn {
+  flex: 1;
+  background-color: #484848;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 6px 10px;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.custom-apply-btn:hover:not(:disabled) {
+  background-color: #505050;
+}
+
+.custom-apply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.custom-action-btn {
+  width: 24px;
+  height: 24px;
+  background-color: #383838;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #888;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-action-btn:hover {
+  background-color: #484848;
+  color: #fff;
+}
+
+.custom-action-btn.delete:hover {
+  color: #ff4444;
+}
+
+.add-btn {
+  background-color: #383838;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: #aaa;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.add-btn:hover:not(:disabled) {
+  background-color: #484848;
+  color: #fff;
+}
+
+.add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 弹窗 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #484848;
+  border-radius: 8px;
+  padding: 20px;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.modal-message {
+  font-size: 12px;
+  color: #ccc;
+}
+
+.modal-input {
+  background-color: #383838;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 12px;
+}
+
+.modal-input:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.modal-btn {
+  background-color: #383838;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 8px 16px;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.modal-btn:hover {
+  background-color: #505050;
+}
+
+.modal-btn.confirm {
+  background-color: #4a90e2;
+  border-color: #4a90e2;
+}
+
+.modal-btn.confirm:hover {
+  background-color: #5a9fe2;
+}
+
+.modal-btn.confirm.delete {
+  background-color: #ff4444;
+  border-color: #ff4444;
+}
+
+.modal-btn.confirm.delete:hover {
+  background-color: #ff5555;
+}

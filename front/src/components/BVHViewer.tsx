@@ -3,7 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { BVHLoader, BVHLoaderResult } from 'three/examples/jsm/loaders/BVHLoader'
-import { ParsedBVHData } from '../services/api'
+import { ParsedBVHData } from '../types'
 import { debugLog } from '../utils/debug'
 
 interface BVHViewerProps {

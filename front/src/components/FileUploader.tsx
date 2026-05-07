@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { BVHLoader } from 'three/examples/jsm/loaders/BVHLoader'
 import * as THREE from 'three'
-import { LocalFileResult, calculateBVHBounds } from '../services/api'
+import { LocalFileResult, calculateBVHBounds } from '../types'
 import { debugLog } from '../utils/debug'
 
 interface FileUploaderProps {

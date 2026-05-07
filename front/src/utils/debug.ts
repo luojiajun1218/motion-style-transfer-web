@@ -1,7 +1,8 @@
 // Debug logger that sends logs to vite terminal instead of browser console
-const DEBUG = true
+// Vite 环境变量，生产环境自动为 false
+const DEBUG = true  // 开发时可改为 false
 
-export function debugLog(component: string, message: string, data?: any) {
+export function debugLog(component: string, message: string, data?: unknown) {
   if (!DEBUG) return
 
   const payload = {
