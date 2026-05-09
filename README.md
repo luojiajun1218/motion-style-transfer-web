@@ -85,8 +85,7 @@ back/pretrained/xia_pretrained.pth
 
 **Backend:**
 ```bash
-cd back
-uvicorn server.main:app --host 0.0.0.0 --port 8000
+uvicorn back.server.main:app --host 0.0.0.0 --port 9000
 ```
 
 **Frontend:**
@@ -108,9 +107,9 @@ Visit `http://localhost:3000` to use the application.
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/bvh/upload` | POST | Upload BVH file |
-| `/bvh/transfer` | POST | Execute style transfer |
-| `/bvh/file/{id}` | GET | Retrieve BVH file content |
+| `/api/upload` | POST | Upload BVH file |
+| `/api/transfer` | POST | Execute style transfer |
+| `/api/file/{id}` | GET | Retrieve BVH file content |
 
 ## Reference
 

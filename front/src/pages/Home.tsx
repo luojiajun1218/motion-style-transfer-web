@@ -5,6 +5,15 @@ import RightSidebar from '../components/RightSidebar'
 import PlaybackBar from '../components/PlaybackBar'
 import TransferProgress, { TransferStep } from '../components/TransferProgress'
 import { uploadBVH, transferStyle, BVHFileState, LocalFileResult, TransferResponse, BVHFileWithRole } from '../types'
+import { getApiAuthHeaders, getBVHUrl } from '../services/api'
+import { buildBVHDownloadTarget, downloadBVHTarget } from '../utils/downloadBVH'
+import { buildResultLabel } from '../utils/resultLabel'
+import {
+  getFileIndexForSkeletonSelection,
+  getSelectionAfterFileRemoval,
+  getSkeletonSelectionForFile,
+  type SkeletonSelection,
+} from '../utils/selectionState'
 
 const defaultFileState: BVHFileState = {
   file: null,
@@ -13,7 +22,12 @@ const defaultFileState: BVHFileState = {
   isUploaded: false
 }
 
-export default function Home() {
+interface HomeProps {
+  userEmail: string
+  onLogout: () => void
+}
+
+export default function Home({ userEmail, onLogout }: HomeProps) {
   // 改为 BVH 文件列表，每个文件可分配角色
   const [bvhFiles, setBvhFiles] = useState<BVHFileWithRole[]>([])
   const [result, setResult] = useState<BVHFileState>(defaultFileState)
@@ -23,7 +37,7 @@ export default function Home() {
   const [transferLoading, setTransferLoading] = useState(false)
   const [transferStep, setTransferStep] = useState<TransferStep>('idle')
   const [transferError, setTransferError] = useState<string | undefined>()
-  const [selectedSkeleton, setSelectedSkeleton] = useState<'source' | 'style' | 'result' | number | null>(null)
+  const [selectedSkeleton, setSelectedSkeleton] = useState<SkeletonSelection>(null)
 
   const playIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fps = 30
@@ -33,7 +47,7 @@ export default function Home() {
   const styleFile = bvhFiles.find(f => f.role === 'style')
 
   // 计算 result 文件名
-  const resultFileName = result.file?.name ?? (result.fileId ? 'Output' : null)
+  const resultFileName = result.file?.name ?? (result.fileId ? buildResultLabel(sourceFile?.file?.name, styleFile?.file?.name) : null)
 
   // Calculate max frames from loaded data
   const maxFrames = Math.max(
@@ -104,7 +118,9 @@ export default function Home() {
     }
     setBvhFiles(prev => {
       const next = [...prev, newFile]
-      setSelectedFileIndex(next.length - 1)  // 自动选中新导入的文件
+      const newIndex = next.length - 1
+      setSelectedFileIndex(newIndex)  // 自动选中新导入的文件
+      setSelectedSkeleton(newIndex)
       return next
     })
     setFrameIndex(0)
@@ -113,7 +129,13 @@ export default function Home() {
 
   // 选中文件
   const handleFileSelect = (index: number) => {
+    if (index < 0 || index >= bvhFiles.length) {
+      setSelectedFileIndex(null)
+      setSelectedSkeleton(null)
+      return
+    }
     setSelectedFileIndex(index)
+    setSelectedSkeleton(getSkeletonSelectionForFile(bvhFiles, index))
   }
 
   // 分配角色（使用当前选中的文件）
@@ -131,17 +153,20 @@ export default function Home() {
         return f
       })
     })
+    setSelectedSkeleton(role)
   }
 
   // 删除文件
   const handleFileRemove = (index: number) => {
     setBvhFiles(prev => prev.filter((_, i) => i !== index))
-    // 清除选中状态或调整选中索引
-    if (selectedFileIndex === index) {
-      setSelectedFileIndex(null)
-    } else if (selectedFileIndex !== null && selectedFileIndex > index) {
-      setSelectedFileIndex(selectedFileIndex - 1)
-    }
+    const nextSelection = getSelectionAfterFileRemoval(
+      bvhFiles,
+      index,
+      selectedFileIndex,
+      selectedSkeleton
+    )
+    setSelectedFileIndex(nextSelection.fileIndex)
+    setSelectedSkeleton(nextSelection.skeleton)
   }
 
   const handleTransfer = async (): Promise<TransferResponse | null> => {
@@ -199,7 +224,7 @@ export default function Home() {
 
       return response
     } catch (error) {
-      console.error('Transfer failed:', error)
+      console.error('Style transfer failed:', error)
       setTransferStep('error')
       setTransferError(error instanceof Error ? error.message : 'Unknown error')
       setTransferLoading(false)
@@ -225,20 +250,54 @@ export default function Home() {
     setFrameIndex(frame)
   }, [])
 
-  const handleSkeletonSelect = (skeleton: 'source' | 'style' | 'result' | number | null) => {
+  const handleSkeletonSelect = (skeleton: SkeletonSelection) => {
     setSelectedSkeleton(skeleton)
-    // 如果是number（unassigned索引），同时更新selectedFileIndex
-    if (typeof skeleton === 'number') {
-      setSelectedFileIndex(skeleton)
-    }
+    setSelectedFileIndex(getFileIndexForSkeletonSelection(bvhFiles, skeleton))
   }
+
+  const getSelectedDownloadTarget = useCallback(() => {
+    if (selectedSkeleton === 'result') {
+      return buildBVHDownloadTarget(
+        { file: result.file, fileId: result.fileId, name: resultFileName },
+        getBVHUrl,
+        URL.createObjectURL,
+        getApiAuthHeaders
+      )
+    }
+
+    if (selectedFileIndex === null) return null
+    const selectedFile = bvhFiles[selectedFileIndex]
+    if (!selectedFile) return null
+
+    return buildBVHDownloadTarget(
+      { file: selectedFile.file, fileId: selectedFile.fileId, name: selectedFile.file?.name },
+      getBVHUrl,
+      URL.createObjectURL,
+      getApiAuthHeaders
+    )
+  }, [bvhFiles, result.file, result.fileId, resultFileName, selectedFileIndex, selectedSkeleton])
+
+  const handleDownloadSelected = useCallback(() => {
+    const target = getSelectedDownloadTarget()
+    if (!target) return
+    void downloadBVHTarget(target)
+  }, [getSelectedDownloadTarget])
+
+  const hasSelectedDownload = selectedSkeleton === 'result'
+    ? Boolean(result.file || result.fileId)
+    : selectedFileIndex !== null && Boolean(bvhFiles[selectedFileIndex]?.file || bvhFiles[selectedFileIndex]?.fileId)
 
   return (
     <div className="home-container">
       {/* Header */}
       <div className="home-header">
         <span className="home-title">Motion Style Transfer</span>
-        <span className="home-style-tag">BVH Workbench</span>
+        <div className="home-account">
+          <span className="home-style-tag">{userEmail}</span>
+          <button type="button" className="home-logout-btn" onClick={onLogout}>
+            Log out
+          </button>
+        </div>
       </div>
 
       {/* Main layout */}
@@ -284,6 +343,8 @@ export default function Home() {
           onFileSelect={handleFileSelect}
           onFileRemove={handleFileRemove}
           onSkeletonSelect={handleSkeletonSelect}
+          onDownloadSelected={handleDownloadSelected}
+          downloadDisabled={!hasSelectedDownload}
         />
       </div>
 

@@ -13,7 +13,6 @@ interface LeftSidebarProps {
   onTransfer: () => Promise<void>
   transferDisabled: boolean
   transferLoading: boolean
-  // 新增 props
   bvhFiles: BVHFileWithRole[]
   onTransferComplete: (resultId: string) => void
   setTransferLoading: (loading: boolean) => void
@@ -34,7 +33,6 @@ export default function LeftSidebar({
   setTransferStep,
   setBvhFiles
 }: LeftSidebarProps) {
-
   const handleRoleClick = (role: 'source' | 'style') => {
     onRoleAssign(role)
   }
@@ -42,22 +40,21 @@ export default function LeftSidebar({
   return (
     <div className="left-sidebar">
       <div className="sidebar-section">
-        <div className="sidebar-title">FILE OPERATIONS</div>
+        <div className="sidebar-title">Files</div>
         <div className="sidebar-content">
           <div className="file-row">
             <span className="file-label">Import BVH:</span>
             <FileUploader
               onSelect={onFileImport as (result: LocalFileResult) => void}
-              label="Import BVH File"
+              label="Import BVH"
             />
           </div>
         </div>
       </div>
 
-      {/* 全局角色按钮 - 只有选中文件后才显示 */}
       {selectedFileIndex !== null && (
         <div className="sidebar-section">
-          <div className="sidebar-title">SET ROLE</div>
+          <div className="sidebar-title">Role</div>
           <div className="sidebar-content">
             <div className="global-role-buttons">
               <button
@@ -78,7 +75,7 @@ export default function LeftSidebar({
       )}
 
       <div className="sidebar-section">
-        <div className="sidebar-title">STYLE TRANSFER</div>
+        <div className="sidebar-title">Transfer</div>
         <div className="sidebar-content">
           <TransferButton
             onClick={onTransfer}
@@ -91,9 +88,8 @@ export default function LeftSidebar({
         </div>
       </div>
 
-      {/* 风格库 */}
       <div className="sidebar-section">
-        <div className="sidebar-title">STYLE LIBRARY</div>
+        <div className="sidebar-title">Style Library</div>
         <StyleLibrary
           bvhFiles={bvhFiles}
           selectedFileIndex={selectedFileIndex}

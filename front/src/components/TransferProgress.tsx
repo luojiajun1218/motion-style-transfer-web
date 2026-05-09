@@ -10,13 +10,13 @@ interface TransferProgressProps {
 
 const stepLabels: Record<TransferStep, string> = {
   idle: '',
-  uploading: 'Uploading File...',
-  'upload-source': 'Uploading Source...',
-  'upload-style': 'Uploading Style...',
-  transferring: 'Applying Style Transfer...',
-  'loading-result': 'Loading Result...',
-  completed: 'Transfer Complete!',
-  error: 'Transfer Failed'
+  uploading: 'Uploading files...',
+  'upload-source': 'Uploading source motion...',
+  'upload-style': 'Uploading style motion...',
+  transferring: 'Running style transfer...',
+  'loading-result': 'Loading output...',
+  completed: 'Transfer complete',
+  error: 'Transfer failed'
 }
 
 const stepProgress: Record<TransferStep, number> = {
@@ -37,13 +37,14 @@ export default function TransferProgress({ isVisible, step, errorMessage }: Tran
   const label = stepLabels[step]
   const isCompleted = step === 'completed'
   const isError = step === 'error'
+  const statusIcon = isCompleted ? 'OK' : isError ? '!' : '...'
 
   return (
     <div className="transfer-progress-overlay">
       <div className="transfer-progress-modal">
         <div className="progress-header">
           <span className="progress-title">
-            {isCompleted ? '✓' : isError ? '✗' : '⟳'} Motion Style Transfer
+            {statusIcon} Motion Style Transfer
           </span>
         </div>
 
@@ -60,7 +61,7 @@ export default function TransferProgress({ isVisible, step, errorMessage }: Tran
 
         {isCompleted && (
           <div className="progress-success-hint">
-            Result is now visible in the canvas
+            Output is now visible in the canvas.
           </div>
         )}
       </div>

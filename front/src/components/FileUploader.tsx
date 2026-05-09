@@ -31,15 +31,11 @@ export default function FileUploader({ onSelect, label }: FileUploaderProps) {
       )
       rootBones.forEach((rootBone: THREE.Bone) => boneGroup.add(rootBone))
 
-      // 统一朝向：静态旋转整个骨骼组，让所有BVH面向同一方向（Z+）
-      // BVH默认朝向通常是Y+向上、Z+向前，旋转-90度让X+成为前方（面向摄像机）
       boneGroup.rotation.y = -Math.PI / 2
 
       const fps = 30
       const frameTime = 1 / fps
       const frameCount = Math.ceil(result.clip.duration * fps)
-
-      // Calculate bounds after applying animation frame 0
       const { bounds, size, center } = calculateBVHBounds(boneGroup, result.clip)
 
       debugLog('FileUploader', 'BVH loaded', {
@@ -66,7 +62,7 @@ export default function FileUploader({ onSelect, label }: FileUploaderProps) {
       })
     } catch (error) {
       debugLog('FileUploader', 'Parse failed', { error: String(error) })
-      alert('Invalid BVH file. Please select a valid BVH file.')
+      alert('Invalid BVH file. Choose a valid BVH file and try again.')
     }
 
     if (inputRef.current) inputRef.current.value = ''

@@ -38,17 +38,19 @@ export default function PlaybackBar({
           className="status-btn"
           onClick={onReset}
           disabled={frameIndex === 0}
-          title="Jump to start"
+          title="Jump to first frame"
+          aria-label="Jump to first frame"
         >
-          ⏮
+          ↺
         </button>
         <button
           className="status-btn play-btn"
           onClick={handlePlayPause}
           disabled={maxFrames === 0}
           title={isPlaying ? 'Pause' : 'Play'}
+          aria-label={isPlaying ? 'Pause' : 'Play'}
         >
-          {isPlaying ? '⏸' : '▶'}
+          {isPlaying ? 'Ⅱ' : '▶'}
         </button>
       </div>
 
@@ -80,7 +82,7 @@ export default function PlaybackBar({
       </div>
 
       <div className="status-right">
-        <span className="status-fps">{fps} fps</span>
+        <span className="status-fps">{fps} FPS</span>
       </div>
     </div>
   )

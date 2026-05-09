@@ -1,5 +1,6 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from fastapi.responses import FileResponse
+from back.server.routers.auth import require_auth_session
 from back.server.services.file_storage import FileStorage
 from back.server.services.style_service import StyleService
 from back.server.models.schemas import TransferRequest, TransferResponse, UploadResponse
@@ -11,7 +12,7 @@ storage = FileStorage()
 style_service = StyleService(storage)
 
 
-@router.post("/upload", response_model=UploadResponse)
+@router.post("/upload", response_model=UploadResponse, dependencies=[Depends(require_auth_session)])
 async def upload_bvh(file: UploadFile = File(...)):
     """上传 BVH 文件"""
     if not file.filename.endswith(".bvh"):
@@ -21,7 +22,7 @@ async def upload_bvh(file: UploadFile = File(...)):
     return storage.save_upload(content, file.filename)
 
 
-@router.post("/transfer", response_model=TransferResponse)
+@router.post("/transfer", response_model=TransferResponse, dependencies=[Depends(require_auth_session)])
 async def transfer_style(request: TransferRequest):
     """执行风格迁移"""
     try:
@@ -33,7 +34,7 @@ async def transfer_style(request: TransferRequest):
         raise HTTPException(status_code=500, detail=f"Transfer failed: {str(e)}")
 
 
-@router.get("/file/{file_id}")
+@router.get("/file/{file_id}", dependencies=[Depends(require_auth_session)])
 async def download_file(file_id: str):
     """下载 BVH 文件"""
     file_info = storage.get_file_info(file_id)

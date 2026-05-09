@@ -3,8 +3,9 @@ import { OrbitControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import SkeletonGroup from './SkeletonGroup'
-import { BVHFileWithRole, ParsedBVHData, getBVHUrl, calculateBVHBounds } from '../types'
+import { BVHFileWithRole, ParsedBVHData, getApiAuthHeaders, getBVHUrl, calculateBVHBounds } from '../types'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { buildResultLabel } from '../utils/resultLabel'
 
 interface UnifiedCanvasProps {
   allFiles: BVHFileWithRole[]
@@ -199,6 +200,7 @@ export default function UnifiedCanvas({
 
     import('three/examples/jsm/loaders/BVHLoader').then(({ BVHLoader }) => {
       const loader = new BVHLoader()
+      loader.setRequestHeader(getApiAuthHeaders())
       loader.load(url, (result) => {
         if (!isMountedRef.current) return  // 组件已卸载，不更新状态
 
@@ -248,13 +250,14 @@ export default function UnifiedCanvas({
   // 获取各角色文件
   const sourceFile = allFiles.find(f => f.role === 'source')
   const styleFile = allFiles.find(f => f.role === 'style')
+  const resultLabel = buildResultLabel(sourceFile?.file?.name, styleFile?.file?.name)
 
   return (
     <div className="canvas-shell">
       {loading && <div className="canvas-state">Loading motion data...</div>}
-      {!hasAnyData && <div className="canvas-state">Drop in a BVH file to start</div>}
-      <Canvas camera={{ position: [0, 25, 40], fov: 50 }} onCreated={({ gl }) => gl.setClearColor('#10191f')}>
-        <color attach="background" args={['#10191f']} />
+      {!hasAnyData && <div className="canvas-state">Import a BVH file to start</div>}
+      <Canvas camera={{ position: [0, 25, 40], fov: 50 }} onCreated={({ gl }) => gl.setClearColor('#1c2127')}>
+        <color attach="background" args={['#1c2127']} />
         <ambientLight intensity={0.68} />
         <directionalLight position={[10, 10, 5]} intensity={1.15} />
 
@@ -269,7 +272,7 @@ export default function UnifiedCanvas({
         <SkeletonGroup bvhData={styleFile?.parsedData ?? null} frameIndex={frameIndex} xOffset={0} color="#69afe5" label="Style" isSelected={selectedSkeleton === 'style'} skeletonType="style" />
 
         {/* Result */}
-        <SkeletonGroup bvhData={effectiveResultData} frameIndex={frameIndex} xOffset={6} color="#d5bf62" label="Result" isSelected={selectedSkeleton === 'result'} skeletonType="result" />
+        <SkeletonGroup bvhData={effectiveResultData} frameIndex={frameIndex} xOffset={6} color="#d5bf62" label={resultLabel} isSelected={selectedSkeleton === 'result'} skeletonType="result" />
 
         {/* Unassigned files */}
         {unassignedFiles.map((f, i) => {
@@ -290,7 +293,7 @@ export default function UnifiedCanvas({
           )
         })}
 
-        <gridHelper args={[30, 30, 0x4d626c, 0x283942]} />
+        <gridHelper args={[30, 30, 0x5b626b, 0x343b44]} />
         <OrbitControls ref={controlsRef as any} makeDefault />
       </Canvas>
     </div>

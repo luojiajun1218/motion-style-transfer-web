@@ -4,6 +4,19 @@ import { debugLog } from '../utils/debug'
 
 // 开发环境使用 Vite 代理（/api -> localhost:9000），生产环境需要配置实际后端地址
 const API_BASE_URL = '/api'
+let authToken: string | null = null
+
+export const setApiAuthToken = (token: string | null): void => {
+  authToken = token
+}
+
+const getAuthHeaders = () => (
+  authToken ? { Authorization: `Bearer ${authToken}` } : undefined
+)
+
+export const getApiAuthHeaders = (): Record<string, string> => (
+  authToken ? { Authorization: `Bearer ${authToken}` } : {}
+)
 
 export interface UploadResponse {
   id: string
@@ -14,6 +27,17 @@ export interface UploadResponse {
 export interface TransferResponse {
   result_id: string
   result_url: string
+}
+
+export interface RequestCodeResponse {
+  email: string
+  expires_in_seconds: number
+  debug_code?: string | null
+}
+
+export interface AuthSessionResponse {
+  email: string
+  token: string
 }
 
 // Parsed BVH data for local preview
@@ -102,16 +126,39 @@ export const uploadBVH = async (file: File): Promise<UploadResponse> => {
   formData.append('file', file)
 
   const response = await axios.post<UploadResponse>(`${API_BASE_URL}/upload`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+    headers: { 'Content-Type': 'multipart/form-data', ...getAuthHeaders() }
   })
   return response.data
+}
+
+export const requestLoginCode = async (email: string): Promise<RequestCodeResponse> => {
+  const response = await axios.post<RequestCodeResponse>(`${API_BASE_URL}/auth/request-code`, { email })
+  return response.data
+}
+
+export const verifyLoginCode = async (email: string, code: string): Promise<AuthSessionResponse> => {
+  const response = await axios.post<AuthSessionResponse>(`${API_BASE_URL}/auth/verify-code`, { email, code })
+  return response.data
+}
+
+export const getAuthSession = async (token: string): Promise<AuthSessionResponse> => {
+  const response = await axios.get<AuthSessionResponse>(`${API_BASE_URL}/auth/session`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  return response.data
+}
+
+export const logoutAuthSession = async (token: string): Promise<void> => {
+  await axios.post(`${API_BASE_URL}/auth/logout`, undefined, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
 }
 
 export const transferStyle = async (sourceId: string, styleId: string): Promise<TransferResponse> => {
   const response = await axios.post<TransferResponse>(`${API_BASE_URL}/transfer`, {
     source_id: sourceId,
     style_id: styleId
-  })
+  }, { headers: getAuthHeaders() })
   return response.data
 }
 
@@ -137,12 +184,16 @@ export interface PresetFileIdResponse {
 
 // 获取预设风格列表
 export const getPresetStyles = async (): Promise<PresetStylesResponse> => {
-  const response = await axios.get<PresetStylesResponse>(`${API_BASE_URL}/preset/styles`)
+  const response = await axios.get<PresetStylesResponse>(`${API_BASE_URL}/preset/styles`, {
+    headers: getAuthHeaders()
+  })
   return response.data
 }
 
 // 获取指定预设风格的 file_id
 export const getPresetFileId = async (styleId: string): Promise<PresetFileIdResponse> => {
-  const response = await axios.get<PresetFileIdResponse>(`${API_BASE_URL}/preset/${styleId}`)
+  const response = await axios.get<PresetFileIdResponse>(`${API_BASE_URL}/preset/${styleId}`, {
+    headers: getAuthHeaders()
+  })
   return response.data
 }

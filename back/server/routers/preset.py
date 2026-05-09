@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from back.server.routers.auth import require_auth_session
 from back.server.services.preset_service import PresetService
 from back.server.models.schemas import PresetStylesResponse
 
-router = APIRouter(prefix="/api/preset", tags=["preset"])
+router = APIRouter(prefix="/api/preset", tags=["preset"], dependencies=[Depends(require_auth_session)])
 
 # 初始化预设风格服务
 preset_service = PresetService()

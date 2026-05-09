@@ -46,6 +46,11 @@ export interface TransferResponse {
   result_url: string
 }
 
+export interface AuthSessionResponse {
+  email: string
+  token: string
+}
+
 // Preset style types
 export interface PresetStyle {
   id: string
@@ -63,4 +68,4 @@ export interface PresetFileIdResponse {
 }
 
 // Re-export API functions from api.ts
-export { uploadBVH, transferStyle, getBVHUrl, getPresetStyles, getPresetFileId, calculateBVHBounds } from '../services/api'
+export { uploadBVH, transferStyle, getBVHUrl, getApiAuthHeaders, getPresetStyles, getPresetFileId, calculateBVHBounds, requestLoginCode, verifyLoginCode, getAuthSession, logoutAuthSession, setApiAuthToken } from '../services/api'

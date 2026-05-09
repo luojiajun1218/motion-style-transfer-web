@@ -18,6 +18,26 @@ class TransferResponse(BaseModel):
     result_url: str
 
 
+class RequestAuthCodeRequest(BaseModel):
+    email: str
+
+
+class RequestAuthCodeResponse(BaseModel):
+    email: str
+    expires_in_seconds: int
+    debug_code: Optional[str] = None
+
+
+class VerifyAuthCodeRequest(BaseModel):
+    email: str
+    code: str
+
+
+class AuthSessionResponse(BaseModel):
+    email: str
+    token: str
+
+
 class FileInfo(BaseModel):
     id: str
     filename: str

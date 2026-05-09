@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from back.server.routers.auth import router as auth_router
 from back.server.routers.bvh import router as bvh_router
 from back.server.routers.preset import router as preset_router
 
@@ -19,6 +20,7 @@ app.add_middleware(
 )
 
 # 注册路由
+app.include_router(auth_router)
 app.include_router(bvh_router)
 app.include_router(preset_router)
 

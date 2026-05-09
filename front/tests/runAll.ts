@@ -1,0 +1,5 @@
+import './downloadBVH.test'
+import './resultLabel.test'
+import './selectionState.test'
+import './temporaryAuth.test'
+import './uploadFileIfNeeded.test'

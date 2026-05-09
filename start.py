@@ -6,10 +6,20 @@ import sys
 import os
 import signal
 import time
+import queue
+import threading
 from pathlib import Path
 
 # 项目根目录
 ROOT_DIR = Path(__file__).parent.absolute()
+
+
+def stream_process_output(name, proc, output_queue):
+    if not proc.stdout:
+        return
+    for line in iter(proc.stdout.readline, ""):
+        if line:
+            output_queue.put((name, line.rstrip()))
 
 def check_node_modules():
     """检查前端依赖是否安装"""
@@ -40,6 +50,7 @@ def main():
     check_python_deps()
 
     processes = []
+    output_queue = queue.Queue()
 
     try:
         # 启动后端 (FastAPI)
@@ -50,15 +61,23 @@ def main():
             "--host", "0.0.0.0",
             "--port", "9000"
         ]
+        backend_env = os.environ.copy()
+        backend_env["AUTH_TEMPORARY_LOGIN"] = "1"
         backend_proc = subprocess.Popen(
             backend_cmd,
             cwd=ROOT_DIR,
+            env=backend_env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             encoding='utf-8',
             errors='replace'
         )
         processes.append(("后端", backend_proc))
+        threading.Thread(
+            target=stream_process_output,
+            args=("后端", backend_proc, output_queue),
+            daemon=True
+        ).start()
 
         # 等待后端启动
         time.sleep(2)
@@ -76,6 +95,11 @@ def main():
             shell=True
         )
         processes.append(("前端", frontend_proc))
+        threading.Thread(
+            target=stream_process_output,
+            args=("前端", frontend_proc, output_queue),
+            daemon=True
+        ).start()
 
         print("\n" + "=" * 50)
         print("服务已启动:")
@@ -85,17 +109,22 @@ def main():
         print("\n按 Ctrl+C 停止所有服务...")
 
         # 实时打印输出
+        reported_exits = set()
         while True:
-            for name, proc in processes:
-                if proc.stdout:
-                    line = proc.stdout.readline()
-                    if line:
-                        print(f"[{name}] {line.rstrip()}")
+            while True:
+                try:
+                    name, line = output_queue.get_nowait()
+                except queue.Empty:
+                    break
+                print(f"[{name}] {line}")
 
             # 检查进程是否存活
             for name, proc in processes:
-                if proc.poll() is not None:
+                if proc.poll() is not None and name not in reported_exits:
+                    reported_exits.add(name)
                     print(f"[{name}] 进程已退出 (code: {proc.returncode})")
+            if len(reported_exits) == len(processes):
+                break
 
             time.sleep(0.1)
 

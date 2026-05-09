@@ -7,8 +7,8 @@ export default function TransferButton({ onClick, disabled, loading = false }: {
     try {
       await onClick()
     } catch (error) {
-      console.error('Transfer failed:', error)
-      alert('Transfer failed. Please check your files and try again.')
+      console.error('Style transfer failed:', error)
+      alert('Style transfer failed. Check the selected files and try again.')
     }
   }
 

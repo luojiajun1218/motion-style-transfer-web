@@ -16,6 +16,20 @@ class FileStorage:
         # 确保目录存在
         os.makedirs(uploads_dir, exist_ok=True)
         os.makedirs(results_dir, exist_ok=True)
+        self._load_existing_files()
+
+    def _load_existing_files(self):
+        """Rebuild the in-memory index for BVH files already on disk."""
+        for directory in (self.uploads_dir, self.results_dir):
+            for filename in os.listdir(directory):
+                if not filename.lower().endswith(".bvh"):
+                    continue
+                file_id = os.path.splitext(filename)[0]
+                self.files[file_id] = FileInfo(
+                    id=file_id,
+                    filename=filename,
+                    path=os.path.join(directory, filename)
+                )
 
     def save_upload(self, file_content: bytes, filename: str) -> UploadResponse:
         """保存上传的 BVH 文件"""

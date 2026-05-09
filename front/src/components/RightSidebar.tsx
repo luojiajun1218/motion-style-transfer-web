@@ -9,6 +9,8 @@ interface RightSidebarProps {
   onFileSelect: (index: number) => void
   onFileRemove: (index: number) => void
   onSkeletonSelect: (skeleton: 'source' | 'style' | 'result' | number | null) => void
+  onDownloadSelected: () => void
+  downloadDisabled: boolean
 }
 
 const roleColors = {
@@ -30,9 +32,10 @@ export default function RightSidebar({
   selectedSkeleton,
   onFileSelect,
   onFileRemove,
-  onSkeletonSelect
+  onSkeletonSelect,
+  onDownloadSelected,
+  downloadDisabled
 }: RightSidebarProps) {
-
   const handleFileClick = (index: number) => {
     onFileSelect(index)
   }
@@ -48,10 +51,15 @@ export default function RightSidebar({
   if (bvhFiles.length === 0 && !resultFileName) {
     return (
       <div className="right-sidebar">
-        <div className="right-sidebar-header">BVH FILES</div>
+        <div className="right-sidebar-header">
+          <span>BVH Files</span>
+          <button type="button" className="download-selected-btn" disabled>
+            Download
+          </button>
+        </div>
         <div className="right-sidebar-content">
           <div className="file-item disabled">
-            <span className="file-name">(no files loaded)</span>
+            <span className="file-name">No files</span>
           </div>
         </div>
       </div>
@@ -60,11 +68,20 @@ export default function RightSidebar({
 
   return (
     <div className="right-sidebar">
-      <div className="right-sidebar-header">BVH FILES</div>
+      <div className="right-sidebar-header">
+        <span>BVH Files</span>
+        <button
+          type="button"
+          className="download-selected-btn"
+          onClick={onDownloadSelected}
+          disabled={downloadDisabled}
+        >
+          Download
+        </button>
+      </div>
       <div className="right-sidebar-content">
-        {/* BVH 文件列表 */}
         {bvhFiles.map((bvhFile, index) => {
-          const fileName = bvhFile.file?.name ?? 'Unknown'
+          const fileName = bvhFile.file?.name ?? 'Unknown file'
           const isSelected = selectedFileIndex === index
           const roleLabel = roleLabels[bvhFile.role]
           const roleColor = roleColors[bvhFile.role]
@@ -76,12 +93,10 @@ export default function RightSidebar({
               className={`file-item ${isSelected ? 'selected' : ''}`}
               onClick={() => handleFileClick(index)}
             >
-              {/* 左侧：颜色点 + 文件名 */}
               <div className="file-left">
                 <div className="file-dot" style={{ backgroundColor: roleColor }} />
                 <span className="file-name">{fileName}</span>
               </div>
-              {/* 右侧：角色标签 + 删除按钮 */}
               <div className="file-right">
                 {roleLabel && (
                   <span className="file-role-tag" style={{ color: isSelected ? 'var(--accent-ink)' : roleColor }}>
@@ -103,21 +118,18 @@ export default function RightSidebar({
           )
         })}
 
-        {/* Result 文件 */}
         {resultFileName && (
           <div
             className={`file-item result-item ${selectedSkeleton === 'result' ? 'selected' : ''}`}
             onClick={handleResultClick}
           >
-            {/* 左侧 */}
             <div className="file-left">
               <div className="file-dot" style={{ backgroundColor: 'var(--result)' }} />
               <span className="file-name">{resultFileName}</span>
             </div>
-            {/* 右侧 */}
             <div className="file-right">
               <span className="file-role-tag" style={{ color: selectedSkeleton === 'result' ? 'var(--accent-ink)' : 'var(--result)' }}>
-                Result
+                Output
               </span>
             </div>
           </div>
