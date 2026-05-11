@@ -70,6 +70,19 @@
   gap: 9px;
 }
 
+.custom-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.persistent-count {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
 .custom-empty {
   font-size: 12px;
   color: var(--text-dim);
@@ -95,6 +108,29 @@
 .custom-apply-btn {
   flex: 1;
   text-align: left;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.custom-style-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.style-storage-badge {
+  flex: 0 0 auto;
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  padding: 2px 6px;
+  color: var(--accent-strong);
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1.1;
 }
 
 .custom-action-btn {
@@ -117,6 +153,12 @@
   background: var(--panel-hover);
   color: var(--text);
   border-color: var(--line);
+}
+
+.action-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
 }
 
 .custom-action-btn.delete:hover {
@@ -175,6 +217,35 @@
 .modal-input:focus {
   outline: none;
   border-color: var(--accent-line);
+}
+
+.storage-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.storage-option {
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 750;
+  padding: 8px 12px;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.storage-option.active {
+  background: #17181c;
+  border-color: #17181c;
+  color: var(--accent-ink);
+}
+
+.storage-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
 }
 
 .modal-actions {
