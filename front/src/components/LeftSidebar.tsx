@@ -27,20 +27,15 @@ export default function LeftSidebar({
   return (
     <div className="left-sidebar">
       <div className="sidebar-section">
-        <div className="sidebar-title">文件</div>
-        <div className="sidebar-content">
-          <div className="file-row">
-            <span className="file-label">动作 BVH</span>
-            <FileUploader
-              onSelect={onMotionImport}
-              label="导入动作"
-            />
-          </div>
+        <div className="sidebar-content sidebar-imports">
+          <FileUploader
+            onSelect={onMotionImport}
+            label="导入动作 BVH"
+          />
         </div>
       </div>
 
       <div className="sidebar-section">
-        <div className="sidebar-title">风格库</div>
         <StyleLibrary
           bvhFiles={bvhFiles}
           onTransferComplete={onTransferComplete}

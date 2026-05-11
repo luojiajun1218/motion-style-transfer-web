@@ -214,6 +214,23 @@ export default function StyleLibrary({
 
   return (
     <div className="style-library">
+      <div className="style-import-panel">
+        <input
+          ref={styleInputRef}
+          type="file"
+          accept=".bvh"
+          onChange={handleStyleFileSelected}
+          style={{ display: 'none' }}
+        />
+        <button
+          className="add-btn style-import-btn"
+          onClick={handleImportStyleClick}
+          disabled={addingStyle}
+        >
+          导入风格
+        </button>
+      </div>
+
       <div className="preset-section">
         <div className="preset-title">情绪风格</div>
         <div className="preset-grid">
@@ -248,7 +265,7 @@ export default function StyleLibrary({
 
       <div className="custom-section">
         <div className="custom-title-row">
-          <div className="custom-title">我的风格</div>
+          <div className="custom-title">自定义风格库</div>
           <span className="persistent-count">{persistentCount}/4 持久</span>
         </div>
 
@@ -313,21 +330,6 @@ export default function StyleLibrary({
             ))}
           </div>
         )}
-
-        <input
-          ref={styleInputRef}
-          type="file"
-          accept=".bvh"
-          onChange={handleStyleFileSelected}
-          style={{ display: 'none' }}
-        />
-        <button
-          className="add-btn"
-          onClick={handleImportStyleClick}
-          disabled={addingStyle}
-        >
-          导入风格
-        </button>
       </div>
 
       {pendingStyleFile && (

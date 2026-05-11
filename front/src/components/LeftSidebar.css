@@ -16,6 +16,10 @@
   border-bottom: 1px solid var(--line-soft);
 }
 
+.sidebar-section:first-child {
+  border-bottom: 0;
+}
+
 .sidebar-section:last-child {
   border-bottom: 0;
 }
@@ -35,6 +39,10 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.sidebar-imports {
+  padding: 18px 16px 0;
 }
 
 .sidebar-content .blender-btn {
