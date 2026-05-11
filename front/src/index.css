@@ -283,6 +283,55 @@ body::before {
   backdrop-filter: blur(12px);
 }
 
+.comparison-canvas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  padding: 0;
+}
+
+.motion-pane {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(218, 230, 236, 0.105), transparent 30rem),
+    linear-gradient(180deg, var(--canvas-bg), var(--canvas-bg-deep));
+}
+
+.motion-pane.selected {
+  outline: 2px solid var(--accent-line);
+  outline-offset: -2px;
+}
+
+.motion-pane-header {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 24px);
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(18, 22, 27, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  backdrop-filter: blur(12px);
+}
+
+.motion-pane-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
 @media (max-width: 1180px) {
   .left-sidebar {
     flex-basis: 230px;
@@ -332,6 +381,14 @@ body::before {
   .canvas-area {
     flex: none;
     min-height: min(58dvh, 520px);
+  }
+
+  .comparison-canvas {
+    grid-template-columns: 1fr;
+  }
+
+  .motion-pane {
+    min-height: 320px;
   }
 }
 

@@ -1,5 +1,6 @@
 import './RightSidebar.css'
 import { BVHFileWithRole } from '../types'
+import { buildRightSidebarFileEntries } from '../utils/rightSidebarFiles'
 
 interface RightSidebarProps {
   bvhFiles: BVHFileWithRole[]
@@ -46,6 +47,8 @@ export default function RightSidebar({
   onDownloadSelected,
   downloadDisabled
 }: RightSidebarProps) {
+  const fileEntries = buildRightSidebarFileEntries(bvhFiles)
+
   const handleFileClick = (index: number) => {
     onFileSelect(index)
   }
@@ -58,7 +61,7 @@ export default function RightSidebar({
     }
   }
 
-  if (bvhFiles.length === 0 && !resultFileName) {
+  if (fileEntries.length === 0 && !resultFileName) {
     return (
       <div className="right-sidebar">
         <div className="right-sidebar-header">
@@ -90,18 +93,18 @@ export default function RightSidebar({
         </button>
       </div>
       <div className="right-sidebar-content">
-        {bvhFiles.map((bvhFile, index) => {
+        {fileEntries.map(({ file: bvhFile, originalIndex }) => {
           const fileName = getDisplayName(bvhFile)
-          const isSelected = selectedFileIndex === index
+          const isSelected = selectedFileIndex === originalIndex
           const outputLabel = getOutputLabel(bvhFile)
           const roleColor = bvhFile.label ? 'var(--result)' : roleColors[bvhFile.role]
-          const key = bvhFile.fileId || `file-${index}`
+          const key = bvhFile.fileId || `file-${originalIndex}`
 
           return (
             <div
               key={key}
               className={`file-item ${isSelected ? 'selected' : ''}`}
-              onClick={() => handleFileClick(index)}
+              onClick={() => handleFileClick(originalIndex)}
             >
               <div className="file-left">
                 <div className="file-dot" style={{ backgroundColor: roleColor }} />
@@ -117,7 +120,7 @@ export default function RightSidebar({
                   className="remove-btn"
                   onClick={(e) => {
                     e.stopPropagation()
-                    onFileRemove(index)
+                    onFileRemove(originalIndex)
                   }}
                   title="移除"
                   aria-label="移除"

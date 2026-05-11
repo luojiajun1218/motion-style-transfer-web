@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import UnifiedCanvas from '../components/UnifiedCanvas'
+import SourceResultCanvas from '../components/SourceResultCanvas'
 import LeftSidebar from '../components/LeftSidebar'
 import RightSidebar from '../components/RightSidebar'
 import PlaybackBar from '../components/PlaybackBar'
@@ -257,7 +257,7 @@ export default function Home({ userEmail, onLogout }: HomeProps) {
         />
 
         <div className="canvas-area">
-          <UnifiedCanvas
+          <SourceResultCanvas
             allFiles={bvhFiles}
             resultData={result.parsedData}
             resultFileId={result.fileId}
