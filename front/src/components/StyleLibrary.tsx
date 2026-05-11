@@ -1,14 +1,22 @@
-import { useState, useEffect, type Dispatch, type SetStateAction } from 'react'
-import { getPresetStyles, getPresetFileId, transferStyle, uploadBVH, PresetStylesResponse, BVHFileWithRole } from '../types'
-import { useCustomStyles, CustomStyle } from '../hooks/useCustomStyles'
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
+import {
+  getPresetFileId,
+  getPresetStyles,
+  transferStyle,
+  uploadBVH,
+  type BVHFileWithRole,
+  type PresetStylesResponse,
+  type TransferResponse,
+} from '../types'
+import { type CustomStyle, type CustomStyleStorage, useCustomStyles } from '../hooks/useCustomStyles'
+import { parseBVHText } from '../utils/parseBVH'
 import { ensureFileUploaded } from '../utils/uploadFileIfNeeded'
 import { TransferStep } from './TransferProgress'
 import './StyleLibrary.css'
 
 interface StyleLibraryProps {
   bvhFiles: BVHFileWithRole[]
-  selectedFileIndex: number | null
-  onTransferComplete: (resultId: string) => void
+  onTransferComplete: (response: TransferResponse) => void
   transferLoading: boolean
   setTransferLoading: (loading: boolean) => void
   setTransferStep: (step: TransferStep) => void
@@ -16,23 +24,30 @@ interface StyleLibraryProps {
 }
 
 const presetDisplayNames: Record<string, string> = {
-  angry: 'Angry',
-  depressed: 'Depressed',
-  proud: 'Proud',
-  sexy: 'Confident',
-  childlike: 'Childlike',
-  neutral: 'Neutral',
-  old: 'Elderly',
-  strutting: 'Strutting'
+  angry: '愤怒',
+  depressed: '沮丧',
+  proud: '自豪',
+  sexy: '性感',
+  childlike: '童趣',
+  neutral: '中性',
+  old: '年长',
+  strutting: '阔步'
 }
 
 function getPresetDisplayName(style: { id: string; name: string }): string {
   return presetDisplayNames[style.id] ?? style.name
 }
 
+function getAddStyleError(storage: CustomStyleStorage, canAddPersistent: boolean): string {
+  if (storage === 'persistent' && !canAddPersistent) {
+    return '持久风格最多保存 4 个。'
+  }
+
+  return '风格名称已存在。'
+}
+
 export default function StyleLibrary({
   bvhFiles,
-  selectedFileIndex,
   onTransferComplete,
   transferLoading,
   setTransferLoading,
@@ -40,24 +55,32 @@ export default function StyleLibrary({
   setBvhFiles
 }: StyleLibraryProps) {
   const [presetStyles, setPresetStyles] = useState<PresetStylesResponse | null>(null)
-  const { customStyles, addStyle, renameStyle, deleteStyle, canAddMore } = useCustomStyles()
+  const {
+    customStyles,
+    addStyle,
+    renameStyle,
+    deleteStyle,
+    canAddPersistent,
+    persistentCount
+  } = useCustomStyles()
   const [renameIndex, setRenameIndex] = useState<number | null>(null)
   const [renameValue, setRenameValue] = useState('')
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null)
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [addName, setAddName] = useState('')
+  const [pendingStyleFile, setPendingStyleFile] = useState<File | null>(null)
+  const [pendingStyleName, setPendingStyleName] = useState('')
+  const [pendingStyleStorage, setPendingStyleStorage] = useState<CustomStyleStorage>('temporary')
   const [addingStyle, setAddingStyle] = useState(false)
+  const styleInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     getPresetStyles().then(setPresetStyles).catch(console.error)
   }, [])
 
-  const selectedFile = selectedFileIndex !== null ? bvhFiles[selectedFileIndex] : null
-  const sourceFile = bvhFiles.find(f => f.role === 'source')
+  const sourceFile = bvhFiles.find(file => file.role === 'source')
 
-  const handlePresetClick = async (styleId: string) => {
+  const runTransfer = async (styleFileId: string, styleName?: string) => {
     if (!sourceFile?.file) {
-      alert('Set a source motion file first.')
+      alert('请先导入动作。')
       return
     }
 
@@ -69,101 +92,103 @@ export default function StyleLibrary({
       const uploadedSource = await ensureFileUploaded(sourceFile, uploadBVH)
       const sourceId = uploadedSource.fileId
       if (uploadedSource !== sourceFile) {
-        setBvhFiles(prev => prev.map(f => f === sourceFile ? uploadedSource : f))
+        setBvhFiles(prev => prev.map(file => file === sourceFile ? uploadedSource : file))
       }
 
       if (!sourceId) {
-        throw new Error('Could not get the source motion file ID')
+        throw new Error('无法获取动作文件 ID')
       }
 
       setTransferStep('transferring')
-      const presetResult = await getPresetFileId(styleId)
-      const styleIdForTransfer = presetResult.file_id
-      const result = await transferStyle(sourceId, styleIdForTransfer)
-
+      const result = await transferStyle(sourceId, styleFileId, styleName)
       setTransferStep('loading-result')
-      onTransferComplete(result.result_id)
+      onTransferComplete(result)
       setTransferStep('completed')
       setTimeout(() => setTransferStep('idle'), 1500)
     } catch (error: any) {
       setTransferStep('error')
-      alert(`Style transfer failed: ${error.message || error}`)
+      alert(`风格迁移失败：${error.message || error}`)
     } finally {
       setTransferLoading(false)
+    }
+  }
+
+  const handlePresetClick = async (styleId: string) => {
+    if (!sourceFile?.file) {
+      alert('请先导入动作。')
+      return
+    }
+
+    try {
+      const presetResult = await getPresetFileId(styleId)
+      await runTransfer(presetResult.file_id)
+    } catch (error: any) {
+      setTransferStep('error')
+      alert(`风格迁移失败：${error.message || error}`)
     }
   }
 
   const handleCustomClick = async (style: CustomStyle) => {
-    if (!sourceFile?.file) {
-      alert('Set a source motion file first.')
-      return
-    }
+    await runTransfer(style.fileId, style.name)
+  }
 
-    setTransferLoading(true)
-    setTransferStep('idle')
+  const handleImportStyleClick = () => {
+    styleInputRef.current?.click()
+  }
+
+  const handleStyleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
 
     try {
-      setTransferStep('upload-source')
-      const uploadedSource = await ensureFileUploaded(sourceFile, uploadBVH)
-      const sourceId = uploadedSource.fileId
-      if (uploadedSource !== sourceFile) {
-        setBvhFiles(prev => prev.map(f => f === sourceFile ? uploadedSource : f))
-      }
-
-      if (!sourceId) {
-        throw new Error('Could not get the source motion file ID')
-      }
-
-      setTransferStep('transferring')
-      const result = await transferStyle(sourceId, style.fileId)
-      setTransferStep('loading-result')
-      onTransferComplete(result.result_id)
-      setTransferStep('completed')
-      setTimeout(() => setTransferStep('idle'), 1500)
-    } catch (error: any) {
-      setTransferStep('error')
-      alert(`Style transfer failed: ${error.message || error}`)
+      const text = await file.text()
+      parseBVHText(text)
+      setPendingStyleFile(file)
+      setPendingStyleName(file.name.replace(/\.bvh$/i, ''))
+      setPendingStyleStorage(canAddPersistent ? 'persistent' : 'temporary')
+    } catch {
+      alert('BVH 文件无效。请选择有效的 BVH 文件后重试。')
     } finally {
-      setTransferLoading(false)
+      event.target.value = ''
     }
   }
 
-  const handleAddStyle = async () => {
-    if (!selectedFile?.file) {
+  const closeImportDialog = () => {
+    setPendingStyleFile(null)
+    setPendingStyleName('')
+    setPendingStyleStorage('temporary')
+  }
+
+  const handleConfirmImportStyle = async () => {
+    if (!pendingStyleFile) return
+
+    const trimmedName = pendingStyleName.trim()
+    if (!trimmedName) {
+      alert('请输入风格名称。')
       return
     }
 
-    if (!addName.trim()) {
-      alert('Enter a style name.')
+    if (pendingStyleStorage === 'persistent' && !canAddPersistent) {
+      alert('持久风格最多保存 4 个。')
       return
     }
 
     setAddingStyle(true)
 
     try {
-      let fileId = selectedFile.fileId
-      if (!selectedFile.isUploaded) {
-        const uploadResult = await uploadBVH(selectedFile.file)
-        fileId = uploadResult.id
-      }
-
-      if (!fileId) {
-        throw new Error('Upload failed: missing file ID')
-      }
-
-      if (addStyle(addName.trim(), fileId)) {
-        setShowAddModal(false)
-        setAddName('')
+      const uploadResult = await uploadBVH(pendingStyleFile)
+      if (addStyle(trimmedName, uploadResult.id, pendingStyleStorage)) {
+        closeImportDialog()
       } else {
-        alert('The style library is full, or that name already exists.')
+        alert(getAddStyleError(pendingStyleStorage, canAddPersistent))
       }
     } catch (error: any) {
       const errorMsg = error.response?.status === 500
-        ? 'Server error. Check whether the backend is running.'
+        ? '服务器错误。请确认后端服务是否正在运行。'
         : error.response?.status === 404
-        ? 'API endpoint not found.'
-        : error.message || 'Unknown error'
-      alert(`Failed to add style: ${errorMsg}`)
+        ? '未找到 API 接口。'
+        : error.message || '未知错误'
+      alert(`添加风格失败：${errorMsg}`)
     } finally {
       setAddingStyle(false)
     }
@@ -178,7 +203,10 @@ export default function StyleLibrary({
 
   const handleConfirmRename = () => {
     if (renameIndex !== null && renameValue.trim()) {
-      renameStyle(renameIndex, renameValue.trim())
+      if (!renameStyle(renameIndex, renameValue.trim())) {
+        alert('风格名称已存在。')
+        return
+      }
       setRenameIndex(null)
       setRenameValue('')
     }
@@ -187,7 +215,7 @@ export default function StyleLibrary({
   return (
     <div className="style-library">
       <div className="preset-section">
-        <div className="preset-title">Emotion Styles</div>
+        <div className="preset-title">情绪风格</div>
         <div className="preset-grid">
           {presetStyles?.emotion.map(style => (
             <button
@@ -203,7 +231,7 @@ export default function StyleLibrary({
       </div>
 
       <div className="preset-section">
-        <div className="preset-title">Body Styles</div>
+        <div className="preset-title">身体风格</div>
         <div className="preset-grid">
           {presetStyles?.body.map(style => (
             <button
@@ -219,20 +247,26 @@ export default function StyleLibrary({
       </div>
 
       <div className="custom-section">
-        <div className="custom-title">My Styles</div>
+        <div className="custom-title-row">
+          <div className="custom-title">我的风格</div>
+          <span className="persistent-count">{persistentCount}/4 持久</span>
+        </div>
 
         {customStyles.length === 0 ? (
-          <div className="custom-empty">Add a style below to start your library.</div>
+          <div className="custom-empty">导入风格 BVH，建立你的专属风格库。</div>
         ) : (
           <div className="custom-list">
             {customStyles.map((style, index) => (
-              <div key={index} className="custom-item">
+              <div key={`${style.storage}-${style.fileId}-${index}`} className="custom-item">
                 <button
                   className="custom-apply-btn"
                   onClick={() => handleCustomClick(style)}
                   disabled={transferLoading}
                 >
-                  {style.name}
+                  <span className="custom-style-name">{style.name}</span>
+                  {style.storage === 'temporary' && (
+                    <span className="style-storage-badge">临时</span>
+                  )}
                 </button>
                 <button
                   className="custom-action-btn rename"
@@ -240,46 +274,97 @@ export default function StyleLibrary({
                     setRenameIndex(index)
                     setRenameValue(style.name)
                   }}
-                  title="Rename"
+                  title="重命名"
+                  aria-label="重命名"
                 >
-                  Rename
+                  <svg
+                    className="action-icon"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path
+                      d="M4 20h4.2L18.7 9.5a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8V20Z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                    />
+                    <path
+                      d="m13.8 6.2 4 4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                    />
+                  </svg>
                 </button>
                 <button
                   className="custom-action-btn delete"
                   onClick={() => setDeleteIndex(index)}
-                  title="Delete"
+                  title="删除"
+                  aria-label="删除"
                 >
-                  x
+                  ×
                 </button>
               </div>
             ))}
           </div>
         )}
 
+        <input
+          ref={styleInputRef}
+          type="file"
+          accept=".bvh"
+          onChange={handleStyleFileSelected}
+          style={{ display: 'none' }}
+        />
         <button
           className="add-btn"
-          onClick={() => setShowAddModal(true)}
-          disabled={!selectedFile?.file || !canAddMore}
+          onClick={handleImportStyleClick}
+          disabled={addingStyle}
         >
-          + Add to Style Library
+          导入风格
         </button>
       </div>
 
-      {showAddModal && (
+      {pendingStyleFile && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <div className="modal-title">Add Style</div>
+            <div className="modal-title">导入风格</div>
             <input
               className="modal-input"
-              value={addName}
-              onChange={e => setAddName(e.target.value)}
-              placeholder="Style name"
+              value={pendingStyleName}
+              onChange={event => setPendingStyleName(event.target.value)}
+              placeholder="风格名称"
               maxLength={20}
             />
+            <div className="storage-options" role="radiogroup" aria-label="保存方式">
+              <button
+                type="button"
+                className={`storage-option ${pendingStyleStorage === 'temporary' ? 'active' : ''}`}
+                onClick={() => setPendingStyleStorage('temporary')}
+              >
+                临时
+              </button>
+              <button
+                type="button"
+                className={`storage-option ${pendingStyleStorage === 'persistent' ? 'active' : ''}`}
+                onClick={() => setPendingStyleStorage('persistent')}
+                disabled={!canAddPersistent}
+              >
+                持久
+              </button>
+            </div>
+            {!canAddPersistent && (
+              <div className="modal-message">持久风格已达 4 个上限，仍可导入临时风格。</div>
+            )}
             <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={() => setShowAddModal(false)}>Cancel</button>
-              <button className="modal-btn confirm" onClick={handleAddStyle} disabled={addingStyle}>
-                {addingStyle ? 'Adding...' : 'Confirm'}
+              <button className="modal-btn cancel" onClick={closeImportDialog}>取消</button>
+              <button className="modal-btn confirm" onClick={handleConfirmImportStyle} disabled={addingStyle}>
+                {addingStyle ? '正在导入...' : '确认导入'}
               </button>
             </div>
           </div>
@@ -289,17 +374,17 @@ export default function StyleLibrary({
       {renameIndex !== null && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <div className="modal-title">Rename Style</div>
+            <div className="modal-title">重命名风格</div>
             <input
               className="modal-input"
               value={renameValue}
-              onChange={e => setRenameValue(e.target.value)}
-              placeholder="New name"
+              onChange={event => setRenameValue(event.target.value)}
+              placeholder="新名称"
               maxLength={20}
             />
             <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={() => setRenameIndex(null)}>Cancel</button>
-              <button className="modal-btn confirm" onClick={handleConfirmRename}>Confirm</button>
+              <button className="modal-btn cancel" onClick={() => setRenameIndex(null)}>取消</button>
+              <button className="modal-btn confirm" onClick={handleConfirmRename}>确认</button>
             </div>
           </div>
         </div>
@@ -308,11 +393,11 @@ export default function StyleLibrary({
       {deleteIndex !== null && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <div className="modal-title">Delete Style</div>
-            <div className="modal-message">Delete "{customStyles[deleteIndex]?.name}" from your style library?</div>
+            <div className="modal-title">删除风格</div>
+            <div className="modal-message">确定从风格库中删除“{customStyles[deleteIndex]?.name}”吗？</div>
             <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={() => setDeleteIndex(null)}>Cancel</button>
-              <button className="modal-btn confirm delete" onClick={handleConfirmDelete}>Delete</button>
+              <button className="modal-btn cancel" onClick={() => setDeleteIndex(null)}>取消</button>
+              <button className="modal-btn confirm delete" onClick={handleConfirmDelete}>删除</button>
             </div>
           </div>
         </div>
