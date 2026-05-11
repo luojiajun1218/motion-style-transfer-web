@@ -26,7 +26,14 @@ async def upload_bvh(file: UploadFile = File(...)):
 async def transfer_style(request: TransferRequest):
     """执行风格迁移"""
     try:
-        result = style_service.execute_transfer(request.source_id, request.style_id)
+        source_id = request.effective_source_id
+        style_id = request.effective_style_id
+        if not source_id:
+            raise ValueError("Source file is required")
+        if not style_id:
+            raise ValueError("Style file is required")
+
+        result = style_service.execute_transfer(source_id, style_id, style_name_override=request.style_name)
         return TransferResponse(**result)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -38,6 +45,8 @@ async def transfer_style(request: TransferRequest):
 async def download_file(file_id: str):
     """下载 BVH 文件"""
     file_info = storage.get_file_info(file_id)
+    if not file_info:
+        file_info = style_service.preset_service.get_file_info(file_id)
     if not file_info:
         raise HTTPException(status_code=404, detail="File not found")
 

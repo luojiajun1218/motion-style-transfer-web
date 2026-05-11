@@ -51,22 +51,23 @@ class FileStorage:
             file_url=f"/api/file/{file_id}"
         )
 
-    def save_result(self, file_path: str, original_name: str) -> UploadResponse:
+    def save_result(self, file_path: str, original_name: str, result_name: Optional[str] = None) -> UploadResponse:
         """保存迁移结果文件"""
         file_id = str(uuid.uuid4())
         result_path = os.path.join(self.results_dir, f"{file_id}.bvh")
+        saved_filename = result_name or f"result_{original_name}"
 
         shutil.copy(file_path, result_path)
 
         self.files[file_id] = FileInfo(
             id=file_id,
-            filename=f"result_{original_name}",
+            filename=saved_filename,
             path=result_path
         )
 
         return UploadResponse(
             id=file_id,
-            filename=f"result_{original_name}",
+            filename=saved_filename,
             file_url=f"/api/file/{file_id}"
         )
 

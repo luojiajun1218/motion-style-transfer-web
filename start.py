@@ -21,6 +21,29 @@ def stream_process_output(name, proc, output_queue):
         if line:
             output_queue.put((name, line.rstrip()))
 
+
+def stop_process(name, proc):
+    """Stop a spawned dev-server process and its children."""
+    if proc.poll() is not None:
+        return
+
+    print(f"[{name}] 正在停止...")
+    if sys.platform == "win32":
+        subprocess.run(
+            ["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    else:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+    print(f"[{name}] 已停止")
+
+
 def check_node_modules():
     """检查前端依赖是否安装"""
     node_modules = ROOT_DIR / "front" / "node_modules"
@@ -134,14 +157,7 @@ def main():
     finally:
         # 清理进程
         for name, proc in processes:
-            if proc.poll() is None:
-                print(f"[{name}] 正在停止...")
-                proc.terminate()
-                try:
-                    proc.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    proc.kill()
-                print(f"[{name}] 已停止")
+            stop_process(name, proc)
 
         print("\n所有服务已停止。再见!")
 

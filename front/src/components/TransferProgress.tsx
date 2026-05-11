@@ -10,13 +10,13 @@ interface TransferProgressProps {
 
 const stepLabels: Record<TransferStep, string> = {
   idle: '',
-  uploading: 'Uploading files...',
-  'upload-source': 'Uploading source motion...',
-  'upload-style': 'Uploading style motion...',
-  transferring: 'Running style transfer...',
-  'loading-result': 'Loading output...',
-  completed: 'Transfer complete',
-  error: 'Transfer failed'
+  uploading: '正在上传文件...',
+  'upload-source': '正在上传源动作...',
+  'upload-style': '正在上传风格动作...',
+  transferring: '正在执行风格迁移...',
+  'loading-result': '正在加载输出...',
+  completed: '迁移完成',
+  error: '迁移失败'
 }
 
 const stepProgress: Record<TransferStep, number> = {
@@ -37,14 +37,14 @@ export default function TransferProgress({ isVisible, step, errorMessage }: Tran
   const label = stepLabels[step]
   const isCompleted = step === 'completed'
   const isError = step === 'error'
-  const statusIcon = isCompleted ? 'OK' : isError ? '!' : '...'
+  const statusIcon = isCompleted ? '完成' : isError ? '!' : '...'
 
   return (
     <div className="transfer-progress-overlay">
       <div className="transfer-progress-modal">
         <div className="progress-header">
           <span className="progress-title">
-            {statusIcon} Motion Style Transfer
+            {statusIcon} 动作风格迁移
           </span>
         </div>
 
@@ -61,7 +61,7 @@ export default function TransferProgress({ isVisible, step, errorMessage }: Tran
 
         {isCompleted && (
           <div className="progress-success-hint">
-            Output is now visible in the canvas.
+            输出已显示在画布中。
           </div>
         )}
       </div>

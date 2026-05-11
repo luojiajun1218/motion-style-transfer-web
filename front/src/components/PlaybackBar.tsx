@@ -38,8 +38,8 @@ export default function PlaybackBar({
           className="status-btn"
           onClick={onReset}
           disabled={frameIndex === 0}
-          title="Jump to first frame"
-          aria-label="Jump to first frame"
+          title="跳到首帧"
+          aria-label="跳到首帧"
         >
           ↺
         </button>
@@ -47,8 +47,8 @@ export default function PlaybackBar({
           className="status-btn play-btn"
           onClick={handlePlayPause}
           disabled={maxFrames === 0}
-          title={isPlaying ? 'Pause' : 'Play'}
-          aria-label={isPlaying ? 'Pause' : 'Play'}
+          title={isPlaying ? '暂停' : '播放'}
+          aria-label={isPlaying ? '暂停' : '播放'}
         >
           {isPlaying ? 'Ⅱ' : '▶'}
         </button>
@@ -82,7 +82,7 @@ export default function PlaybackBar({
       </div>
 
       <div className="status-right">
-        <span className="status-fps">{fps} FPS</span>
+        <span className="status-fps">{fps} 帧/秒</span>
       </div>
     </div>
   )

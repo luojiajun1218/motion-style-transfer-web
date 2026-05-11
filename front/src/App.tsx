@@ -62,7 +62,7 @@ function App() {
   if (isCheckingSession) {
     return (
       <div className="auth-loading">
-        <span>Checking session</span>
+        <span>正在检查会话</span>
       </div>
     )
   }

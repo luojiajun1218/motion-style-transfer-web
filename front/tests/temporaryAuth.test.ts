@@ -19,12 +19,12 @@ try {
   createTemporaryLoginSession('', 'password')
   throw new Error('expected empty account to be rejected')
 } catch (error) {
-  assertEqual(error instanceof Error ? error.message : '', 'Enter an account and password', 'empty account is rejected')
+  assertEqual(error instanceof Error ? error.message : '', '请输入账号和密码', 'empty account is rejected')
 }
 
 try {
   createTemporaryLoginSession('demo-user', '')
   throw new Error('expected empty password to be rejected')
 } catch (error) {
-  assertEqual(error instanceof Error ? error.message : '', 'Enter an account and password', 'empty password is rejected')
+  assertEqual(error instanceof Error ? error.message : '', '请输入账号和密码', 'empty password is rejected')
 }

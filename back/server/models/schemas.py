@@ -9,13 +9,26 @@ class UploadResponse(BaseModel):
 
 
 class TransferRequest(BaseModel):
-    source_id: str
-    style_id: str
+    source: Optional[str] = None
+    style: Optional[str] = None
+    source_id: Optional[str] = None
+    style_id: Optional[str] = None
+    style_name: Optional[str] = None
+
+    @property
+    def effective_source_id(self) -> Optional[str]:
+        return self.source or self.source_id
+
+    @property
+    def effective_style_id(self) -> Optional[str]:
+        return self.style or self.style_id
 
 
 class TransferResponse(BaseModel):
     result_id: str
     result_url: str
+    result_name: str
+    style_name: str
 
 
 class RequestAuthCodeRequest(BaseModel):

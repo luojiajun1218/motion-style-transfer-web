@@ -20,9 +20,19 @@ const roleColors = {
 }
 
 const roleLabels = {
-  source: 'Source',
-  style: 'Style',
+  source: '源动作',
+  style: '风格',
   unassigned: ''
+}
+
+function getDisplayName(bvhFile: BVHFileWithRole): string {
+  return bvhFile.label ?? bvhFile.file?.name ?? '未知文件'
+}
+
+function getOutputLabel(bvhFile: BVHFileWithRole): string | null {
+  if (bvhFile.label) return '输出'
+  const roleLabel = roleLabels[bvhFile.role]
+  return roleLabel || null
 }
 
 export default function RightSidebar({
@@ -52,14 +62,14 @@ export default function RightSidebar({
     return (
       <div className="right-sidebar">
         <div className="right-sidebar-header">
-          <span>BVH Files</span>
+          <span>BVH 文件</span>
           <button type="button" className="download-selected-btn" disabled>
-            Download
+            下载
           </button>
         </div>
         <div className="right-sidebar-content">
           <div className="file-item disabled">
-            <span className="file-name">No files</span>
+            <span className="file-name">暂无文件</span>
           </div>
         </div>
       </div>
@@ -69,22 +79,22 @@ export default function RightSidebar({
   return (
     <div className="right-sidebar">
       <div className="right-sidebar-header">
-        <span>BVH Files</span>
+        <span>BVH 文件</span>
         <button
           type="button"
           className="download-selected-btn"
           onClick={onDownloadSelected}
           disabled={downloadDisabled}
         >
-          Download
+          下载
         </button>
       </div>
       <div className="right-sidebar-content">
         {bvhFiles.map((bvhFile, index) => {
-          const fileName = bvhFile.file?.name ?? 'Unknown file'
+          const fileName = getDisplayName(bvhFile)
           const isSelected = selectedFileIndex === index
-          const roleLabel = roleLabels[bvhFile.role]
-          const roleColor = roleColors[bvhFile.role]
+          const outputLabel = getOutputLabel(bvhFile)
+          const roleColor = bvhFile.label ? 'var(--result)' : roleColors[bvhFile.role]
           const key = bvhFile.fileId || `file-${index}`
 
           return (
@@ -98,9 +108,9 @@ export default function RightSidebar({
                 <span className="file-name">{fileName}</span>
               </div>
               <div className="file-right">
-                {roleLabel && (
+                {outputLabel && (
                   <span className="file-role-tag" style={{ color: isSelected ? 'var(--accent-ink)' : roleColor }}>
-                    {roleLabel}
+                    {outputLabel}
                   </span>
                 )}
                 <button
@@ -109,9 +119,10 @@ export default function RightSidebar({
                     e.stopPropagation()
                     onFileRemove(index)
                   }}
-                  title="Remove"
+                  title="移除"
+                  aria-label="移除"
                 >
-                  x
+                  ×
                 </button>
               </div>
             </div>
@@ -129,7 +140,7 @@ export default function RightSidebar({
             </div>
             <div className="file-right">
               <span className="file-role-tag" style={{ color: selectedSkeleton === 'result' ? 'var(--accent-ink)' : 'var(--result)' }}>
-                Output
+                输出
               </span>
             </div>
           </div>

@@ -220,7 +220,7 @@ export default function BVHViewer({ bvhUrl, bvhData, frameIndex }: BVHViewerProp
       },
       undefined,
       (err: ErrorEvent) => {
-        setError(`Failed to load BVH: ${err}`)
+        setError(`BVH 加载失败：${err}`)
         setLoading(false)
       }
     )
@@ -233,9 +233,9 @@ export default function BVHViewer({ bvhUrl, bvhData, frameIndex }: BVHViewerProp
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {loading && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'var(--text)' }}>Loading...</div>}
+      {loading && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'var(--text)' }}>加载中...</div>}
       {error && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'var(--danger)' }}>{error}</div>}
-      {!loading && !error && !finalBvhData && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'var(--text-dim)' }}>No BVH file loaded</div>}
+      {!loading && !error && !finalBvhData && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'var(--text-dim)' }}>尚未加载 BVH 文件</div>}
       <Canvas camera={{ position: [0, 5, 15], fov: 50 }}>
         <ambientLight intensity={0.5} />
         <directionalLight position={[10, 10, 5]} intensity={1} />

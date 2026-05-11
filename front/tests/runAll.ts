@@ -1,5 +1,7 @@
 import './downloadBVH.test'
+import './resultLoadGuard.test'
 import './resultLabel.test'
 import './selectionState.test'
+import './styleRole.test'
 import './temporaryAuth.test'
 import './uploadFileIfNeeded.test'

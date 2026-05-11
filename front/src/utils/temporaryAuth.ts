@@ -12,7 +12,7 @@ export function createTemporaryLoginSession(
 ): TemporaryAuthSession {
   const normalizedAccount = account.trim()
   if (!normalizedAccount || !password.trim()) {
-    throw new Error('Enter an account and password')
+    throw new Error('请输入账号和密码')
   }
 
   return {

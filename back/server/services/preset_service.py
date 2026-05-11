@@ -73,3 +73,7 @@ class PresetService:
         if file_id in self.presets:
             return self.presets[file_id].path
         return None
+
+    def get_file_info(self, file_id: str) -> FileInfo | None:
+        """Get preset file metadata."""
+        return self.presets.get(file_id)

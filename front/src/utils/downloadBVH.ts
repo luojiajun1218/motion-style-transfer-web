@@ -72,7 +72,7 @@ export async function downloadBVHTarget(
 
   const response = await fetchFn(target.url, { headers: target.headers ?? {} })
   if (!response.ok) {
-    throw new Error(`Download failed with status ${response.status}`)
+    throw new Error(`下载失败，状态码 ${response.status}`)
   }
 
   const blobUrl = createObjectURL(await response.blob())

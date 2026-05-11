@@ -8,6 +8,7 @@ export interface BVHFileState {
   parsedData: ParsedBVHData | null
   fileId: string | null
   isUploaded: boolean
+  label?: string
 }
 
 // BVH 文件状态（带角色）
@@ -44,6 +45,8 @@ export interface UploadResponse {
 export interface TransferResponse {
   result_id: string
   result_url: string
+  result_name: string
+  style_name: string
 }
 
 export interface AuthSessionResponse {

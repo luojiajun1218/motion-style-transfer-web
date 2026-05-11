@@ -20,7 +20,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     try {
       onLogin(createTemporaryLoginSession(account, password))
     } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : 'Login failed')
+      setError(loginError instanceof Error ? loginError.message : '登录失败')
     } finally {
       setIsSubmitting(false)
     }
@@ -30,13 +30,13 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     <main className="login-page">
       <section className="login-panel" aria-labelledby="login-title">
         <div className="login-brand">
-          <span className="login-kicker">BVH Workspace</span>
-          <h1 id="login-title">Motion Style Transfer</h1>
-          <p>Use any account and password to enter the motion processing workspace.</p>
+          <span className="login-kicker">BVH 动作工作台</span>
+          <h1 id="login-title">动作风格迁移</h1>
+          <p>输入账号和密码，即可进入动作风格迁移。</p>
         </div>
 
         <form className="login-form" onSubmit={handleTemporaryLogin}>
-          <label className="login-label" htmlFor="account">Account</label>
+          <label className="login-label" htmlFor="account">账号</label>
           <input
             id="account"
             className="login-input"
@@ -44,11 +44,11 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             value={account}
             onChange={event => setAccount(event.target.value)}
             autoComplete="username"
-            placeholder="demo"
+            placeholder="请输入账号"
             required
           />
 
-          <label className="login-label" htmlFor="password">Password</label>
+          <label className="login-label" htmlFor="password">密码</label>
           <input
             id="password"
             className="login-input"
@@ -56,14 +56,14 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             value={password}
             onChange={event => setPassword(event.target.value)}
             autoComplete="current-password"
-            placeholder="Any password"
+            placeholder="请输入密码"
             required
           />
 
           {error && <p className="login-error">{error}</p>}
 
           <button className="login-submit" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Entering' : 'Enter workspace'}
+            {isSubmitting ? '正在进入' : '进入工作区'}
           </button>
         </form>
       </section>

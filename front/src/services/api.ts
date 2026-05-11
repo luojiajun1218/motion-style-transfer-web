@@ -27,6 +27,8 @@ export interface UploadResponse {
 export interface TransferResponse {
   result_id: string
   result_url: string
+  result_name: string
+  style_name: string
 }
 
 export interface RequestCodeResponse {
@@ -154,10 +156,11 @@ export const logoutAuthSession = async (token: string): Promise<void> => {
   })
 }
 
-export const transferStyle = async (sourceId: string, styleId: string): Promise<TransferResponse> => {
+export const transferStyle = async (sourceId: string, styleId: string, styleName?: string): Promise<TransferResponse> => {
   const response = await axios.post<TransferResponse>(`${API_BASE_URL}/transfer`, {
-    source_id: sourceId,
-    style_id: styleId
+    source: sourceId,
+    style: styleId,
+    style_name: styleName
   }, { headers: getAuthHeaders() })
   return response.data
 }

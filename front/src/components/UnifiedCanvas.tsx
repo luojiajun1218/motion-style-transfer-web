@@ -5,12 +5,14 @@ import * as THREE from 'three'
 import SkeletonGroup from './SkeletonGroup'
 import { BVHFileWithRole, ParsedBVHData, getApiAuthHeaders, getBVHUrl, calculateBVHBounds } from '../types'
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { buildResultLabel } from '../utils/resultLabel'
+import { buildMotionFileLabel, buildResultLabel } from '../utils/resultLabel'
+import { isCurrentResultLoad } from '../utils/resultLoadGuard'
 
 interface UnifiedCanvasProps {
   allFiles: BVHFileWithRole[]
   resultData: ParsedBVHData | null
   resultFileId: string | null
+  resultFileName: string | null
   frameIndex: number
   selectedSkeleton: 'source' | 'style' | 'result' | number | null
   onFileSelect: (index: number) => void
@@ -177,6 +179,7 @@ export default function UnifiedCanvas({
   allFiles,
   resultData,
   resultFileId,
+  resultFileName,
   frameIndex,
   selectedSkeleton,
   onFileSelect,
@@ -185,24 +188,36 @@ export default function UnifiedCanvas({
   const [loadedResultData, setLoadedResultData] = useState<ParsedBVHData | null>(null)
   const [loading, setLoading] = useState(false)
   const controlsRef = useRef<OrbitControlsImpl | null>(null)
-  const isMountedRef = useRef(true)
+  const currentResultFileIdRef = useRef<string | null>(null)
 
   const unassignedFiles = allFiles.filter(f => f.role === 'unassigned')
 
   useEffect(() => {
-    isMountedRef.current = true
+    if (resultData) {
+      currentResultFileIdRef.current = null
+      setLoadedResultData(null)
+      setLoading(false)
+      return
+    }
+    if (!resultFileId) {
+      currentResultFileIdRef.current = null
+      setLoadedResultData(null)
+      setLoading(false)
+      return
+    }
 
-    if (resultData) { setLoadedResultData(null); return }
-    if (!resultFileId) { setLoadedResultData(null); return }
+    currentResultFileIdRef.current = resultFileId
+    const loadingFileId = resultFileId
+    const isActiveLoad = () => isCurrentResultLoad(loadingFileId, () => currentResultFileIdRef.current)
 
     setLoading(true)
-    const url = getBVHUrl(resultFileId)
+    const url = getBVHUrl(loadingFileId)
 
     import('three/examples/jsm/loaders/BVHLoader').then(({ BVHLoader }) => {
       const loader = new BVHLoader()
       loader.setRequestHeader(getApiAuthHeaders())
       loader.load(url, (result) => {
-        if (!isMountedRef.current) return  // 组件已卸载，不更新状态
+        if (!isActiveLoad()) return
 
         const boneGroup = new THREE.Group()
         const rootBones = result.skeleton.bones.filter(
@@ -222,9 +237,10 @@ export default function UnifiedCanvas({
         action.time = 0
         mixer.update(0)
 
-        const { bounds, size, center } = calculateBVHBounds(boneGroup)
+        const { bounds, size, center } = calculateBVHBounds(boneGroup, result.clip)
         mixer.stopAllAction()
 
+        if (!isActiveLoad()) return
         setLoadedResultData({
           skeleton: result.skeleton, clip: result.clip, boneGroup,
           frameCount: Math.ceil(result.clip.duration * 30), frameTime: 1/30, fps: 30,
@@ -232,15 +248,17 @@ export default function UnifiedCanvas({
         })
         setLoading(false)
       }, undefined, (err: unknown) => {
-        if (!isMountedRef.current) return
+        if (!isActiveLoad()) return
         console.error('Load failed:', err)
         setLoading(false)
       })
     })
 
     return () => {
-      isMountedRef.current = false
-      setLoadedResultData(null)
+      if (currentResultFileIdRef.current === loadingFileId) {
+        currentResultFileIdRef.current = null
+        setLoadedResultData(null)
+      }
     }
   }, [resultFileId, resultData])
 
@@ -250,12 +268,14 @@ export default function UnifiedCanvas({
   // 获取各角色文件
   const sourceFile = allFiles.find(f => f.role === 'source')
   const styleFile = allFiles.find(f => f.role === 'style')
-  const resultLabel = buildResultLabel(sourceFile?.file?.name, styleFile?.file?.name)
+  const sourceLabel = buildMotionFileLabel(sourceFile?.file?.name, '源动作')
+  const styleLabel = buildMotionFileLabel(styleFile?.file?.name, '风格')
+  const resultLabel = resultFileName ?? buildResultLabel(sourceFile?.file?.name, styleFile?.file?.name)
 
   return (
     <div className="canvas-shell">
-      {loading && <div className="canvas-state">Loading motion data...</div>}
-      {!hasAnyData && <div className="canvas-state">Import a BVH file to start</div>}
+      {loading && <div className="canvas-state">正在加载动作数据...</div>}
+      {!hasAnyData && <div className="canvas-state">导入 BVH 文件开始</div>}
       <Canvas camera={{ position: [0, 25, 40], fov: 50 }} onCreated={({ gl }) => gl.setClearColor('#1c2127')}>
         <color attach="background" args={['#1c2127']} />
         <ambientLight intensity={0.68} />
@@ -266,10 +286,10 @@ export default function UnifiedCanvas({
         <CameraController allFiles={allFiles} resultData={resultData} loadedResultData={loadedResultData} controlsRef={controlsRef} />
 
         {/* Source */}
-        <SkeletonGroup bvhData={sourceFile?.parsedData ?? null} frameIndex={frameIndex} xOffset={-6} color="#78c28f" label="Source" isSelected={selectedSkeleton === 'source'} skeletonType="source" />
+        <SkeletonGroup bvhData={sourceFile?.parsedData ?? null} frameIndex={frameIndex} xOffset={-6} color="#78c28f" label={sourceLabel} isSelected={selectedSkeleton === 'source'} skeletonType="source" />
 
         {/* Style */}
-        <SkeletonGroup bvhData={styleFile?.parsedData ?? null} frameIndex={frameIndex} xOffset={0} color="#69afe5" label="Style" isSelected={selectedSkeleton === 'style'} skeletonType="style" />
+        <SkeletonGroup bvhData={styleFile?.parsedData ?? null} frameIndex={frameIndex} xOffset={0} color="#69afe5" label={styleLabel} isSelected={selectedSkeleton === 'style'} skeletonType="style" />
 
         {/* Result */}
         <SkeletonGroup bvhData={effectiveResultData} frameIndex={frameIndex} xOffset={6} color="#d5bf62" label={resultLabel} isSelected={selectedSkeleton === 'result'} skeletonType="result" />
@@ -278,6 +298,7 @@ export default function UnifiedCanvas({
         {unassignedFiles.map((f, i) => {
           const actualIndex = allFiles.findIndex(file => file === f)
           const isSelected = selectedSkeleton === actualIndex  // 动态判断是否选中
+          const fileLabel = f.label ?? buildMotionFileLabel(f.file?.name, 'BVH 文件')
           return (
             <SkeletonGroup
               key={`unassigned-${i}`}
@@ -285,9 +306,8 @@ export default function UnifiedCanvas({
               frameIndex={frameIndex}
               xOffset={12 + i * 6}
               color="#98a7ad"
-              label=""
+              label={fileLabel}
               isSelected={isSelected}
-              showLabel={false}
               skeletonType={`unassigned-${actualIndex}`}
             />
           )
