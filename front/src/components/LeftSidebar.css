@@ -73,3 +73,13 @@
   flex-direction: column;
   gap: 10px;
 }
+
+.left-download-area {
+  margin-top: auto;
+  padding: 16px 18px 18px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.left-download-btn {
+  width: 100%;
+}

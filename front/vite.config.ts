@@ -31,6 +31,17 @@ function debugLogPlugin() {
 
 export default defineConfig({
   plugins: [react(), debugLogPlugin()],
+  build: {
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          three: ['three', '@react-three/fiber', '@react-three/drei', 'three-stdlib']
+        }
+      }
+    }
+  },
   server: {
     port: 3000,
     proxy: {

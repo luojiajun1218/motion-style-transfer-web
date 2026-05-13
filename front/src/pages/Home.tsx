@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import SourceResultCanvas from '../components/SourceResultCanvas'
 import LeftSidebar from '../components/LeftSidebar'
-import RightSidebar from '../components/RightSidebar'
 import PlaybackBar from '../components/PlaybackBar'
 import TransferProgress, { TransferStep } from '../components/TransferProgress'
 import { BVHFileState, BVHFileWithRole, LocalFileResult } from '../types'
@@ -9,10 +8,16 @@ import { getApiAuthHeaders, getBVHUrl } from '../services/api'
 import { buildBVHDownloadTarget, downloadBVHTarget } from '../utils/downloadBVH'
 import { buildTransferResultLabel } from '../utils/resultLabel'
 import { parseBVHText } from '../utils/parseBVH'
+import { buildResultPaneEntries, buildSourcePaneEntries } from '../utils/previewPaneFiles'
 import {
   getFileIndexForSkeletonSelection,
-  getSelectionAfterFileRemoval,
-  getSkeletonSelectionForFile,
+  getPaneSelectionAfterArchivedResultSelect,
+  getPaneSelectionAfterCurrentResultSelect,
+  getPaneSelectionAfterSourceRowSelect,
+  getPreviewSelectionAfterCurrentResultRemoval,
+  getPreviewSelectionAfterFileRemoval,
+  getSelectedBvhDownloadEnabled,
+  type SelectedBvhTarget,
   type SkeletonSelection,
 } from '../utils/selectionState'
 
@@ -32,6 +37,9 @@ export default function Home({ userEmail, onLogout }: HomeProps) {
   const [bvhFiles, setBvhFiles] = useState<BVHFileWithRole[]>([])
   const [result, setResult] = useState<BVHFileState>(defaultFileState)
   const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null)
+  const [selectedBvhTarget, setSelectedBvhTarget] = useState<SelectedBvhTarget>(null)
+  const [sourcePreviewFileIndex, setSourcePreviewFileIndex] = useState<number | null>(null)
+  const [resultPreviewFileIndex, setResultPreviewFileIndex] = useState<number | null>(null)
   const [frameIndex, setFrameIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [transferLoading, setTransferLoading] = useState(false)
@@ -47,10 +55,17 @@ export default function Home({ userEmail, onLogout }: HomeProps) {
   const resultFileName = result.file?.name ?? (
     result.fileId ? buildTransferResultLabel(resultName, sourceFile?.file?.name, undefined) : null
   )
+  const sourcePaneEntries = buildSourcePaneEntries(bvhFiles)
+  const resultPaneEntries = buildResultPaneEntries(
+    bvhFiles,
+    resultFileName || result.fileId ? { name: resultFileName ?? 'motion.bvh', fileId: result.fileId } : null
+  )
 
+  const sourcePreviewFile = sourcePreviewFileIndex === null ? sourceFile : bvhFiles[sourcePreviewFileIndex]
+  const resultPreviewFile = resultPreviewFileIndex === null ? null : bvhFiles[resultPreviewFileIndex]
   const maxFrames = Math.max(
-    sourceFile?.parsedData?.frameCount || 0,
-    result.parsedData?.frameCount || 0,
+    sourcePreviewFile?.parsedData?.frameCount || 0,
+    resultPreviewFile?.parsedData?.frameCount || result.parsedData?.frameCount || 0,
     100
   )
 
@@ -119,6 +134,8 @@ export default function Home({ userEmail, onLogout }: HomeProps) {
       ]
       const newIndex = next.length - 1
       setSelectedFileIndex(newIndex)
+      setSelectedBvhTarget({ kind: 'file', fileIndex: newIndex })
+      setSourcePreviewFileIndex(newIndex)
       setSelectedSkeleton('source')
       return next
     })
@@ -126,26 +143,67 @@ export default function Home({ userEmail, onLogout }: HomeProps) {
     setIsPlaying(false)
   }
 
-  const handleFileSelect = (index: number) => {
-    if (index < 0 || index >= bvhFiles.length) {
-      setSelectedFileIndex(null)
-      setSelectedSkeleton(null)
-      return
-    }
-    setSelectedFileIndex(index)
-    setSelectedSkeleton(getSkeletonSelectionForFile(bvhFiles, index))
+  const handleSourceRowSelect = (index: number) => {
+    const nextSelection = getPaneSelectionAfterSourceRowSelect(bvhFiles, index)
+    setSelectedFileIndex(nextSelection.fileIndex)
+    setSelectedSkeleton(nextSelection.skeleton)
+    setSelectedBvhTarget(nextSelection.downloadTarget)
+    setSourcePreviewFileIndex(nextSelection.fileIndex)
+  }
+
+  const handleCurrentResultSelect = () => {
+    const nextSelection = getPaneSelectionAfterCurrentResultSelect(Boolean(result.file || result.fileId))
+    setSelectedFileIndex(nextSelection.fileIndex)
+    setSelectedSkeleton(nextSelection.skeleton)
+    setSelectedBvhTarget(nextSelection.downloadTarget)
+    setResultPreviewFileIndex(null)
+  }
+
+  const handleArchivedResultSelect = (index: number) => {
+    const nextSelection = getPaneSelectionAfterArchivedResultSelect(bvhFiles, index)
+    setSelectedFileIndex(nextSelection.fileIndex)
+    setSelectedSkeleton(nextSelection.skeleton)
+    setSelectedBvhTarget(nextSelection.downloadTarget)
+    setResultPreviewFileIndex(nextSelection.fileIndex)
+  }
+
+  const handleCurrentResultRemove = () => {
+    const nextSelection = getPreviewSelectionAfterCurrentResultRemoval(bvhFiles, {
+      selectedFileIndex,
+      selectedSkeleton,
+      selectedBvhTarget,
+      sourcePreviewFileIndex,
+      resultPreviewFileIndex,
+      hasCurrentResult: Boolean(result.file || result.fileId)
+    })
+    setResult(defaultFileState)
+    setResultName(null)
+    setSelectedFileIndex(nextSelection.selectedFileIndex)
+    setSelectedSkeleton(nextSelection.selectedSkeleton)
+    setSelectedBvhTarget(nextSelection.selectedBvhTarget)
+    setSourcePreviewFileIndex(nextSelection.sourcePreviewFileIndex)
+    setResultPreviewFileIndex(nextSelection.resultPreviewFileIndex)
   }
 
   const handleFileRemove = (index: number) => {
     setBvhFiles(prev => prev.filter((_, fileIndex) => fileIndex !== index))
-    const nextSelection = getSelectionAfterFileRemoval(
+    const nextSelection = getPreviewSelectionAfterFileRemoval(
       bvhFiles,
       index,
-      selectedFileIndex,
-      selectedSkeleton
+      {
+        selectedFileIndex,
+        selectedSkeleton,
+        selectedBvhTarget,
+        sourcePreviewFileIndex,
+        resultPreviewFileIndex,
+        hasCurrentResult: Boolean(result.file || result.fileId)
+      }
     )
-    setSelectedFileIndex(nextSelection.fileIndex)
-    setSelectedSkeleton(nextSelection.skeleton)
+    setSelectedFileIndex(nextSelection.selectedFileIndex)
+    setSelectedSkeleton(nextSelection.selectedSkeleton)
+    setSelectedBvhTarget(nextSelection.selectedBvhTarget)
+    setSourcePreviewFileIndex(nextSelection.sourcePreviewFileIndex)
+    setResultPreviewFileIndex(nextSelection.resultPreviewFileIndex)
   }
 
   const archiveResultToFiles = async (fileId: string, name: string | null) => {
@@ -190,11 +248,20 @@ export default function Home({ userEmail, onLogout }: HomeProps) {
 
   const handleSkeletonSelect = (skeleton: SkeletonSelection) => {
     setSelectedSkeleton(skeleton)
-    setSelectedFileIndex(getFileIndexForSkeletonSelection(bvhFiles, skeleton))
+    const fileIndex = getFileIndexForSkeletonSelection(bvhFiles, skeleton)
+    setSelectedFileIndex(fileIndex)
+
+    if (skeleton === 'result' && (result.file || result.fileId)) {
+      setSelectedBvhTarget({ kind: 'current-result' })
+      setResultPreviewFileIndex(null)
+      return
+    }
+
+    setSelectedBvhTarget(fileIndex === null ? null : { kind: 'file', fileIndex })
   }
 
   const getSelectedDownloadTarget = useCallback(() => {
-    if (selectedSkeleton === 'result') {
+    if (selectedBvhTarget?.kind === 'current-result') {
       return buildBVHDownloadTarget(
         { file: result.file, fileId: result.fileId, name: resultFileName },
         getBVHUrl,
@@ -203,8 +270,8 @@ export default function Home({ userEmail, onLogout }: HomeProps) {
       )
     }
 
-    if (selectedFileIndex === null) return null
-    const selectedFile = bvhFiles[selectedFileIndex]
+    if (selectedBvhTarget?.kind !== 'file') return null
+    const selectedFile = bvhFiles[selectedBvhTarget.fileIndex]
     if (!selectedFile) return null
 
     return buildBVHDownloadTarget(
@@ -213,7 +280,7 @@ export default function Home({ userEmail, onLogout }: HomeProps) {
       URL.createObjectURL,
       getApiAuthHeaders
     )
-  }, [bvhFiles, result.file, result.fileId, resultFileName, selectedFileIndex, selectedSkeleton])
+  }, [bvhFiles, result.file, result.fileId, resultFileName, selectedBvhTarget])
 
   const handleDownloadSelected = useCallback(() => {
     const target = getSelectedDownloadTarget()
@@ -221,9 +288,15 @@ export default function Home({ userEmail, onLogout }: HomeProps) {
     void downloadBVHTarget(target)
   }, [getSelectedDownloadTarget])
 
-  const hasSelectedDownload = selectedSkeleton === 'result'
-    ? Boolean(result.file || result.fileId)
-    : selectedFileIndex !== null && Boolean(bvhFiles[selectedFileIndex]?.file || bvhFiles[selectedFileIndex]?.fileId)
+  const hasSelectedDownload = getSelectedBvhDownloadEnabled(
+    bvhFiles.map(file => ({
+      role: file.role,
+      hasFile: Boolean(file.file),
+      hasFileId: Boolean(file.fileId)
+    })),
+    selectedBvhTarget,
+    Boolean(result.file || result.fileId)
+  )
 
   return (
     <div className="home-container">
@@ -248,38 +321,40 @@ export default function Home({ userEmail, onLogout }: HomeProps) {
             }
             setResultName(response.result_name)
             setResult({ file: null, parsedData: null, fileId: response.result_id, isUploaded: true })
+            setSelectedFileIndex(null)
+            setSelectedSkeleton('result')
+            setSelectedBvhTarget({ kind: 'current-result' })
+            setResultPreviewFileIndex(null)
             setTransferStep('completed')
             setTimeout(() => setTransferStep('idle'), 1500)
           }}
           setTransferLoading={setTransferLoading}
           setTransferStep={setTransferStep}
           setBvhFiles={setBvhFiles}
+          onDownloadSelected={handleDownloadSelected}
+          downloadDisabled={!hasSelectedDownload}
         />
 
         <div className="canvas-area">
           <SourceResultCanvas
             allFiles={bvhFiles}
+            sourceEntries={sourcePaneEntries}
+            resultEntries={resultPaneEntries}
             resultData={result.parsedData}
             resultFileId={result.fileId}
             resultFileName={resultFileName}
             frameIndex={frameIndex}
             selectedSkeleton={selectedSkeleton}
-            onFileSelect={handleFileSelect}
+            sourcePreviewFileIndex={sourcePreviewFileIndex}
+            resultPreviewFileIndex={resultPreviewFileIndex}
+            onSourceRowSelect={handleSourceRowSelect}
+            onCurrentResultSelect={handleCurrentResultSelect}
+            onCurrentResultRemove={handleCurrentResultRemove}
+            onArchivedResultSelect={handleArchivedResultSelect}
+            onFileRemove={handleFileRemove}
             onSkeletonSelect={handleSkeletonSelect}
           />
         </div>
-
-        <RightSidebar
-          bvhFiles={bvhFiles}
-          selectedFileIndex={selectedFileIndex}
-          resultFileName={resultFileName}
-          selectedSkeleton={selectedSkeleton}
-          onFileSelect={handleFileSelect}
-          onFileRemove={handleFileRemove}
-          onSkeletonSelect={handleSkeletonSelect}
-          onDownloadSelected={handleDownloadSelected}
-          downloadDisabled={!hasSelectedDownload}
-        />
       </div>
 
       <PlaybackBar
