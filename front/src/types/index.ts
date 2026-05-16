@@ -46,7 +46,7 @@ export interface TransferResponse {
   result_id: string
   result_url: string
   result_name: string
-  style_name: string
+  style_name?: string
 }
 
 export interface AuthSessionResponse {

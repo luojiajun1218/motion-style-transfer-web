@@ -121,7 +121,7 @@ export default function StyleLibrary({
 
     try {
       const presetResult = await getPresetFileId(styleId)
-      await runTransfer(presetResult.file_id)
+      await runTransfer(presetResult.file_id, styleId)
     } catch (error: any) {
       setTransferStep('error')
       alert(`风格迁移失败：${error.message || error}`)

@@ -64,6 +64,24 @@ class TransferContractTests(unittest.TestCase):
             self.assertEqual(result["style_name"], "happy.bvh")
             self.assertEqual(storage.get_file_info(result["result_id"]).filename, "walk_happy.bvh")
 
+    def test_style_service_uses_style_name_override_when_provided(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            uploads_dir = root / "uploads"
+            results_dir = root / "results"
+            storage = FileStorage(str(uploads_dir), str(results_dir))
+            source = storage.save_upload(b"HIERARCHY\n", "walk.bvh")
+            style = storage.save_upload(b"HIERARCHY\n", "some_upload.bvh")
+            service = StyleService(storage)
+
+            def fake_style_transfer(source_path, style_path, output_path):
+                Path(output_path).write_bytes(b"HIERARCHY\n")
+
+            with patch("back.server.services.style_service.style_transfer", fake_style_transfer):
+                result = service.execute_transfer(source.id, style.id, style_name_override="优雅")
+
+            self.assertEqual(result["style_name"], "优雅")
+
     def test_preset_service_resolves_preset_file_info(self):
         with tempfile.TemporaryDirectory() as tmp:
             preset_dir = Path(tmp)

@@ -34,9 +34,9 @@ class StyleService:
 
         return None
 
-    def _build_result_name(self, source_id: str, style_id: str) -> str:
+    def _build_result_name(self, source_id: str, style_id: str, style_name_override: str | None = None) -> str:
         source_name = self._get_file_name(source_id)
-        style_name = self._get_file_name(style_id)
+        style_name = style_name_override or self._get_file_name(style_id)
 
         if not source_name or not style_name:
             return "styled_motion.bvh"
@@ -58,7 +58,7 @@ class StyleService:
         if not style_path:
             raise ValueError(f"Style file not found: {style_id}")
 
-        result_name = self._build_result_name(source_id, style_id)
+        result_name = self._build_result_name(source_id, style_id, style_name_override)
         style_name = style_name_override or self._get_file_name(style_id) or "style.bvh"
         results_dir = os.path.join(project_root, "data", "results")
         os.makedirs(results_dir, exist_ok=True)

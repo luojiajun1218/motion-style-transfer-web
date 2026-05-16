@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { BVHLoader, BVHLoaderResult } from 'three/examples/jsm/loaders/BVHLoader'
 import { ParsedBVHData } from '../types'
 import { debugLog } from '../utils/debug'
+import { createSkeletonLine } from '../utils/skeletonLine'
 
 interface BVHViewerProps {
   bvhUrl?: string | null          // For backend files (results)
@@ -68,10 +69,7 @@ function BVHScene({ bvhData, frameIndex }: { bvhData: BVHDataInternal | null, fr
     // Create lines connecting parent-child bones
     bvhData.skeleton.bones.forEach((_, i) => {
       if (i === 0) return // Skip root bone (no parent line)
-      const geometry = new THREE.BufferGeometry()
-      const positions = new Float32Array(6) // 2 points * 3 coords
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-      const line = new THREE.Line(geometry, lineMaterial)
+      const line = createSkeletonLine(lineMaterial)
       line.userData.boneIndex = i
       groupRef.current!.add(line)
       lineRefs.current.push(line)

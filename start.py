@@ -22,6 +22,13 @@ def stream_process_output(name, proc, output_queue):
             output_queue.put((name, line.rstrip()))
 
 
+def child_process_options():
+    """Keep Ctrl+C handling in this launcher on Windows."""
+    if sys.platform == "win32":
+        return {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+    return {}
+
+
 def stop_process(name, proc):
     """Stop a spawned dev-server process and its children."""
     if proc.poll() is not None:
@@ -93,7 +100,8 @@ def main():
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             encoding='utf-8',
-            errors='replace'
+            errors='replace',
+            **child_process_options()
         )
         processes.append(("后端", backend_proc))
         threading.Thread(
@@ -115,7 +123,8 @@ def main():
             stderr=subprocess.STDOUT,
             encoding='utf-8',
             errors='replace',
-            shell=True
+            shell=True,
+            **child_process_options()
         )
         processes.append(("前端", frontend_proc))
         threading.Thread(

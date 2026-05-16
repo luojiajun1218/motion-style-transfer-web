@@ -28,7 +28,7 @@ class TransferResponse(BaseModel):
     result_id: str
     result_url: str
     result_name: str
-    style_name: str
+    style_name: Optional[str] = None
 
 
 class RequestAuthCodeRequest(BaseModel):

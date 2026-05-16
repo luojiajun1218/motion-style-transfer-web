@@ -4,6 +4,7 @@ import { Text, Billboard } from '@react-three/drei'
 import * as THREE from 'three'
 import { SkeletonUtils } from 'three-stdlib'
 import { ParsedBVHData } from '../types'
+import { createSkeletonLine } from '../utils/skeletonLine'
 
 interface SkeletonGroupProps {
   bvhData: ParsedBVHData | null
@@ -113,9 +114,7 @@ export default function SkeletonGroup({ bvhData, frameIndex, xOffset, color, lab
     // Create lines connecting bones (using cloned bones count)
     clonedBones.forEach((_, i) => {
       if (i === 0) return
-      const geometry = new THREE.BufferGeometry()
-      geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3))
-      const line = new THREE.Line(geometry, lineMaterial.current)
+      const line = createSkeletonLine(lineMaterial.current)
       line.userData.boneIndex = i
       groupRef.current!.add(line)
       lineRefs.current.push(line)
